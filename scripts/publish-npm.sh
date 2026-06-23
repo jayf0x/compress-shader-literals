@@ -47,8 +47,11 @@ bun -e "
 bun run build
 bun run test
 
+# ── refresh real-world stats (local only) ────────────────────────────────────
+( cd tests && bun install && node e2e.js --write )
+
 # ── commit + tag + push (GHA workflow handles npm publish) ────────────────────
-git add package.json bun.lock
+git add package.json bun.lock README.md
 git commit -m "chore: release $NEW"
 git tag "$TAG"
 git push origin HEAD

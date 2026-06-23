@@ -42,6 +42,7 @@
     "build": "bun build src/plugin.js --outdir dist --entry-naming index.js --target node --format esm --external @babel/parser --external @babel/traverse --external @rollup/pluginutils --external magic-string --external unplugin && node scripts/compress-dist.js",
     "test": "bun test",
     "test:run": "bun test",
+    "test:e2e": "cd tests && bun install && node e2e.js",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "npm:deploy": "bash ./scripts/publish-npm.sh",

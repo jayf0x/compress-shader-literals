@@ -1,0 +1,8 @@
+{
+  "name": "compress-shader-literals-e2e",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "@jayf0x/fluidity-js": "0.2.8"
+  }
+}
