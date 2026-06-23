@@ -18,7 +18,7 @@ const traverse = _traverse.default || _traverse;
 const here = dirname(fileURLToPath(import.meta.url));
 
 // Packages to benchmark — `bun add` each in tests/ first.
-const PACKAGES = ['@jayf0x/fluidity-js'];
+const PACKAGES = ['three', '@jayf0x/fluidity-js', 'ogl', 'shader-park-core', 'curtainsjs'];
 
 // A template literal is "a shader" if its text looks like GLSL/WGSL.
 const SHADER_SIGNAL = /\b(gl_FragColor|gl_Position|void\s+main|precision\s+(highp|mediump|lowp)|fn\s+main)\b/;
