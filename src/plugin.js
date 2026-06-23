@@ -1,38 +1,17 @@
 import { createFilter } from '@rollup/pluginutils';
+import { diff, snap } from 'byte-snap';
 import MagicString from 'magic-string';
 import { createUnplugin } from 'unplugin';
 
 import { extractShaderLiterals, minifyShader } from './core.js';
 
-// ponytail: inline stats mirror byte-snap's output. Swap for the `byte-snap`
-// package once it's published; until then a sibling/gitignored import can't
-// survive the publish boundary or CI.
-function fmtBytes(bytes) {
-  const units = ['B', 'KB', 'MB', 'GB'];
-  let v = bytes;
-  let u = 0;
-  while (v >= 1024 && u < units.length - 1) {
-    v /= 1024;
-    u++;
-  }
-  return `${v.toFixed(2)} ${units[u]}`;
-}
-
-function printRatio(beforeBytes, afterBytes, files) {
-  const saved = beforeBytes - afterBytes;
-  const pct = beforeBytes === 0 ? 0 : (saved / beforeBytes) * 100;
-  console.log('\ncompress-shader-literals');
-  console.log('────────────────────────');
-  console.log(`${fmtBytes(beforeBytes)} → ${fmtBytes(afterBytes)}`);
-  console.log(`saved: ${fmtBytes(saved)} (${pct.toFixed(2)}% smaller)`);
-  console.log(`shaders: ${files}\n`);
-}
-
 export const compressShaderLiterals = createUnplugin((options = {}) => {
   const tags = options.tags || ['glsl', 'wgsl', 'shader'];
   const filter = createFilter(options.include || [/\.[jt]sx?$/], options.exclude || [/node_modules/, /dist/]);
 
-  const stats = { before: 0, after: 0, files: 0 };
+  // Accumulate the shader source before/after so byte-snap can report the diff.
+  let beforeText = '';
+  let afterText = '';
 
   return {
     name: 'compress-shader-literals',
@@ -55,27 +34,24 @@ export const compressShaderLiterals = createUnplugin((options = {}) => {
           ms.overwrite(literal.start, literal.end, `\`${minified}\``);
           hasChanges = true;
         }
+
+        if (options.outputRatio) {
+          beforeText += literal.value;
+          afterText += minified;
+        }
       }
 
       if (!hasChanges) return null;
 
-      const resultCode = ms.toString();
-
-      if (options.outputRatio) {
-        stats.before += Buffer.byteLength(code);
-        stats.after += Buffer.byteLength(resultCode);
-        stats.files += 1;
-      }
-
       return {
-        code: resultCode,
+        code: ms.toString(),
         map: ms.generateMap({ hires: true, source: id }),
       };
     },
 
     buildEnd() {
-      if (options.outputRatio && stats.files > 0) {
-        printRatio(stats.before, stats.after, stats.files);
+      if (options.outputRatio && beforeText) {
+        diff(snap.text(beforeText), snap.text(afterText)).print();
       }
     },
   };
