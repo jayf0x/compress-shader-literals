@@ -21,7 +21,7 @@
   "author": "jayF0x",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/jayF0x/compress-shader-literals.git"
+    "url": "https://github.com/jayf0x/compress-shader-literals"
   },
   "homepage": "https://github.com/jayF0x/compress-shader-literals#readme",
   "bugs": {
