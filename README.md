@@ -7,7 +7,7 @@
 [![npm downloads](https://img.shields.io/npm/dm/compress-shader-literals?color=success)](https://www.npmjs.com/package/compress-shader-literals)
 [![license](https://img.shields.io/npm/l/compress-shader-literals?color=blue)](./LICENSE)
 
-Comments, indentation, blank lines — gone from your `glsl` / `wgsl` literals before your bundler even runs. Zero source changes, full sourcemaps. One [unplugin](https://github.com/unjs/unplugin) for **Vite, Rollup, webpack, esbuild, Rspack, Rolldown & Farm**.
+Smaller WebGL & WebGPU bundles for free — shrink your shaders at build time, in any bundler.
 
 ![Alt Preview](./assets/preview.png)
 
@@ -65,6 +65,8 @@ export default { plugins: [compressShaderLiterals.vite({ outputRatio: true })] }
 ---
 
 ## What it compresses
+
+Comments, indentation, and blank lines — stripped from your `glsl` / `wgsl` literals before your bundler even runs. Zero source changes, full sourcemaps. One [unplugin](https://github.com/unjs/unplugin) covers **Vite, Rollup, webpack, esbuild, Rspack, Rolldown & Farm**.
 
 ```ts
 // Tagged template literal
