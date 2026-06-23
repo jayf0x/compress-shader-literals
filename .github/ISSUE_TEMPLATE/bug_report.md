@@ -13,6 +13,7 @@ assignees: ''
 ## Domain
 
 <!-- tick one -->
+
 - [ ] `domain:core` — props / config / API
 - [ ] `domain:render` — shaders / display pass
 - [ ] `domain:physics` — fluid solver
@@ -26,10 +27,10 @@ assignees: ''
 
 ## Expected vs actual
 
-| | |
-|---|---|
-| Expected | |
-| Actual | |
+|          |     |
+| -------- | --- |
+| Expected |     |
+| Actual   |     |
 
 ## Context
 

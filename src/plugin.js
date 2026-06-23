@@ -2,14 +2,37 @@ import { createFilter } from '@rollup/pluginutils';
 import MagicString from 'magic-string';
 import { createUnplugin } from 'unplugin';
 
-import { diff, snap } from '../byte-snap/index.js';
 import { extractShaderLiterals, minifyShader } from './core.js';
+
+// ponytail: inline stats mirror byte-snap's output. Swap for the `byte-snap`
+// package once it's published; until then a sibling/gitignored import can't
+// survive the publish boundary or CI.
+function fmtBytes(bytes) {
+  const units = ['B', 'KB', 'MB', 'GB'];
+  let v = bytes;
+  let u = 0;
+  while (v >= 1024 && u < units.length - 1) {
+    v /= 1024;
+    u++;
+  }
+  return `${v.toFixed(2)} ${units[u]}`;
+}
+
+function printRatio(beforeBytes, afterBytes, files) {
+  const saved = beforeBytes - afterBytes;
+  const pct = beforeBytes === 0 ? 0 : (saved / beforeBytes) * 100;
+  console.log('\ncompress-shader-literals');
+  console.log('────────────────────────');
+  console.log(`${fmtBytes(beforeBytes)} → ${fmtBytes(afterBytes)}`);
+  console.log(`saved: ${fmtBytes(saved)} (${pct.toFixed(2)}% smaller)`);
+  console.log(`shaders: ${files}\n`);
+}
 
 export const compressShaderLiterals = createUnplugin((options = {}) => {
   const tags = options.tags || ['glsl', 'wgsl', 'shader'];
   const filter = createFilter(options.include || [/\.[jt]sx?$/], options.exclude || [/node_modules/, /dist/]);
 
-  const snaps = [];
+  const stats = { before: 0, after: 0, files: 0 };
 
   return {
     name: 'compress-shader-literals',
@@ -19,7 +42,6 @@ export const compressShaderLiterals = createUnplugin((options = {}) => {
       if (!filter(id)) return null;
       if (!tags.some((tag) => code.includes(tag))) return null;
 
-      const before = snap.text(code);
       const literals = extractShaderLiterals(code, tags);
       if (literals.length === 0) return null;
 
@@ -40,7 +62,9 @@ export const compressShaderLiterals = createUnplugin((options = {}) => {
       const resultCode = ms.toString();
 
       if (options.outputRatio) {
-        snaps.push({ id, before, after: snap.text(resultCode) });
+        stats.before += Buffer.byteLength(code);
+        stats.after += Buffer.byteLength(resultCode);
+        stats.files += 1;
       }
 
       return {
@@ -50,20 +74,8 @@ export const compressShaderLiterals = createUnplugin((options = {}) => {
     },
 
     buildEnd() {
-      if (options.outputRatio && snaps.length > 0) {
-        const before = {
-          timestamp: 0,
-          files: snaps.length,
-          bytes: { total: snaps.reduce((s, e) => s + e.before.bytes.total, 0), average: 0, largest: 0, smallest: 0 },
-          entries: [],
-        };
-        const after = {
-          timestamp: 0,
-          files: snaps.length,
-          bytes: { total: snaps.reduce((s, e) => s + e.after.bytes.total, 0), average: 0, largest: 0, smallest: 0 },
-          entries: [],
-        };
-        diff(before, after).print();
+      if (options.outputRatio && stats.files > 0) {
+        printRatio(stats.before, stats.after, stats.files);
       }
     },
   };

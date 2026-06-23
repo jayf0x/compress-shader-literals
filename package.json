@@ -2,28 +2,60 @@
   "name": "compress-shader-literals",
   "version": "0.0.0",
   "type": "module",
-  "private": true,
-  "devDependencies": {
+  "description": "Size matters. Minify GLSL/WGSL shader template literals at build time — universal plugin for Vite, Rollup, webpack, esbuild & more.",
+  "keywords": [
+    "shader",
+    "glsl",
+    "wgsl",
+    "minify",
+    "compress",
+    "webgl",
+    "webgpu",
+    "vite-plugin",
+    "rollup-plugin",
+    "webpack-plugin",
+    "esbuild-plugin",
+    "unplugin"
+  ],
+  "license": "MIT",
+  "author": "jayF0x",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/jayF0x/compress-shader-literals.git"
+  },
+  "homepage": "https://github.com/jayF0x/compress-shader-literals#readme",
+  "bugs": {
+    "url": "https://github.com/jayF0x/compress-shader-literals/issues"
+  },
+  "main": "./dist/index.js",
+  "module": "./dist/index.js",
+  "exports": {
+    ".": {
+      "import": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "sideEffects": false,
+  "scripts": {
+    "build": "bun build src/plugin.js --outdir dist --entry-naming index.js --target node --format esm --external @babel/parser --external @babel/traverse --external @rollup/pluginutils --external magic-string --external unplugin && node scripts/compress-dist.js",
+    "test": "bun test",
+    "test:run": "bun test",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "npm:deploy": "bash ./scripts/publish-npm.sh",
+    "rm:stalepr": "git branch -vv | grep '\\[gone\\]' | awk '{print $1}' | xargs git branch -D"
+  },
+  "dependencies": {
     "@babel/parser": "^8.0.0",
     "@babel/traverse": "^8.0.0",
     "@rollup/pluginutils": "^5.4.0",
-    "@types/babel__traverse": "^7.28.0",
-    "@types/node": "^26.0.0",
     "magic-string": "^0.30.21",
-    "typescript": "^6.0.3",
     "unplugin": "^3.0.0"
   },
-  "scripts": {
-    "build": "vite build && node scripts/compress-dist.js",
-    "build:nocompress": "vite build",
-    "test": "vitest",
-    "test:run": "vitest run",
-    "test:coverage": "vitest run --coverage",
-    "test:claude": "PATH=~/.nvm/versions/node/v20.19.6/bin:$PATH npx vitest run 2>&1 | tail -8",
-    "typecheck": "bunx tsc --noEmit",
-    "format": "prettier --write .",
-    "format:check": "prettier --check .",
-    "publish:npm": "bash ./scripts/publish-npm.sh",
-    "rm:stalepr": "git branch -vv | grep '\\[gone\\]' | awk '{print $1}' | xargs git branch -D"
+  "devDependencies": {
+    "@trivago/prettier-plugin-sort-imports": "^5.0.0",
+    "prettier": "^3.0.0"
   }
 }
