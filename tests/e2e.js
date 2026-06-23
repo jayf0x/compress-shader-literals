@@ -8,6 +8,7 @@
  */
 import { parse } from '@babel/parser';
 import _traverse from '@babel/traverse';
+import { execFileSync } from 'node:child_process';
 import { existsSync, readFileSync, readdirSync, statSync, writeFileSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -16,6 +17,9 @@ import { minifyShader } from '../src/core.js';
 
 const traverse = _traverse.default || _traverse;
 const here = dirname(fileURLToPath(import.meta.url));
+
+// Validate the benchmarked libraries actually load before trusting their stats.
+execFileSync('node', [resolve(here, 'validate.js')], { stdio: 'inherit' });
 
 // Packages to benchmark — `bun add` each in tests/ first.
 const PACKAGES = ['three', '@jayf0x/fluidity-js', 'ogl', 'shader-park-core', 'curtainsjs'];

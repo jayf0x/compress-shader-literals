@@ -53,6 +53,7 @@
     "typecheck": "tsc --noEmit --strict --skipLibCheck src/index.d.ts",
     "test": "bun test",
     "test:run": "bun test",
+    "test:validate": "cd tests && bun install && node validate.js",
     "test:e2e": "cd tests && bun install && node e2e.js",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
