@@ -43,8 +43,9 @@ bun -e "
   writeFileSync('package.json', JSON.stringify(pkg, null, 2) + '\n');
 "
 
-# ── build + test ──────────────────────────────────────────────────────────────
+# ── build + typecheck + test ─────────────────────────────────────────────────
 bun run build
+bun run typecheck
 bun run test
 
 # ── refresh real-world stats (local only) ────────────────────────────────────

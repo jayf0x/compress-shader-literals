@@ -9,6 +9,7 @@
     "wgsl",
     "minify",
     "compress",
+    "typescript",
     "webgl",
     "webgpu",
     "three",
@@ -36,8 +37,10 @@
   },
   "main": "./dist/index.js",
   "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
   "exports": {
     ".": {
+      "types": "./dist/index.d.ts",
       "import": "./dist/index.js"
     }
   },
@@ -46,7 +49,8 @@
   ],
   "sideEffects": false,
   "scripts": {
-    "build": "bun build src/plugin.js --outdir dist --entry-naming index.js --target node --format esm --external @babel/parser --external @babel/traverse --external @rollup/pluginutils --external magic-string --external unplugin && node scripts/compress-dist.js",
+    "build": "bun build src/plugin.js --outdir dist --entry-naming index.js --target node --format esm --external @babel/parser --external @babel/traverse --external @rollup/pluginutils --external magic-string --external unplugin && cp src/index.d.ts dist/index.d.ts && node scripts/compress-dist.js",
+    "typecheck": "tsc --noEmit --strict --skipLibCheck src/index.d.ts",
     "test": "bun test",
     "test:run": "bun test",
     "test:e2e": "cd tests && bun install && node e2e.js",
@@ -64,6 +68,7 @@
   },
   "devDependencies": {
     "@trivago/prettier-plugin-sort-imports": "^5.0.0",
-    "prettier": "^3.0.0"
+    "prettier": "^3.0.0",
+    "typescript": "^5.6.0"
   }
 }
