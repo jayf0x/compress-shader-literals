@@ -1,5 +1,10 @@
 # Changelog
 
+## v0.0.7
+
+- Enhance API with additional options
+- Fix byte-snap handling
+
 ## v0.0.6
 
 - Expose core API
