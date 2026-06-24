@@ -54,7 +54,7 @@
   ],
   "sideEffects": false,
   "scripts": {
-    "build": "bun build src/plugin.js --outdir dist --entry-naming index.js --target node --format esm --external @babel/parser --external @babel/traverse --external @rollup/pluginutils --external byte-snap --external magic-string --external unplugin && cp src/index.d.ts dist/index.d.ts && node scripts/compress-dist.js",
+    "build": "bun build src/plugin.js --outdir dist --entry-naming index.js --target node --format esm --external @babel/parser --external @babel/traverse --external @rollup/pluginutils --external byte-snap --external magic-string --external unplugin && cp src/index.d.ts dist/index.d.ts",
     "typecheck": "tsc --noEmit --strict --skipLibCheck src/index.d.ts",
     "test": "bun test",
     "test:run": "bun test",
