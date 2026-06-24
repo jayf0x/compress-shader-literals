@@ -7,6 +7,7 @@ import { extractShaderLiterals, minifyShader } from './core.js';
 
 export const compressShaderLiterals = createUnplugin((options = {}) => {
   const tags = options.tags || ['glsl', 'wgsl', 'shader'];
+  const minify = options.transform || minifyShader;
   const filter = createFilter(options.include || [/\.[jt]sx?$/], options.exclude || [/node_modules/, /dist/]);
 
   // Accumulate the shader source before/after so byte-snap can report the diff.
@@ -24,11 +25,17 @@ export const compressShaderLiterals = createUnplugin((options = {}) => {
       const literals = extractShaderLiterals(code, tags);
       if (literals.length === 0) return null;
 
+      if (options.debug) {
+        console.log(
+          `[compress-shader-literals] ${id}: ${literals.length} literal(s) — ${literals.map((l) => l.tag).join(', ')}`
+        );
+      }
+
       const ms = new MagicString(code);
       let hasChanges = false;
 
       for (const literal of literals) {
-        const minified = minifyShader(literal.value);
+        const minified = minify(literal.value);
 
         if (literal.value !== minified) {
           ms.overwrite(literal.start, literal.end, `\`${minified}\``);
