@@ -1,5 +1,9 @@
 # Changelog
 
+## v0.0.8
+
+- Internal/infrastructure changes only
+
 ## v0.0.7
 
 - Enhance API with additional options
