@@ -43,7 +43,7 @@ export function extractShaderLiterals(code, tags = ['glsl', 'wgsl', 'shader']) {
       // Handle comment-prefixed templates: /* wgsl */ `...`
       TemplateLiteral(path) {
         const node = path.node;
-        const leadingComments = node.leadingComments || path.parentPath?.node?.leadingComments || [] || [];
+        const leadingComments = node.leadingComments || path.parentPath?.node?.leadingComments || [];
         for (const comment of leadingComments) {
           if (!comment || comment.type !== 'CommentBlock') continue;
           const m = comment.value.match(/^\s*(glsl|wgsl|shader)\s*$/);

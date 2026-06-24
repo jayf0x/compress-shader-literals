@@ -52,8 +52,39 @@ bun run test
 ( cd tests && bun install && node e2e.js --write )
 bun run format
 
+# ── update changelog.md via Claude Code CLI ───────────────────────────────────
+# PREV_TAG is the latest existing tag — the new $TAG isn't created until below.
+PREV_TAG=$(git tag --sort=-version:refname | grep "^v" | head -1)
+COMMIT_LOG=$(git log --oneline "$PREV_TAG"..HEAD 2>/dev/null || git log --oneline | head -20)
+
+echo ""
+echo "Updating changelog.md (Claude Code)..."
+
+claude \
+  --model haiku \
+  --no-session-persistence \
+  -p "Update changelog.md for a new NPM release of compress-shader-literals.
+
+New version: $NEW
+Previous tag: $PREV_TAG
+
+Commits since $PREV_TAG:
+$COMMIT_LOG
+
+Instructions:
+- Read changelog.md first
+- Add a new '## v$NEW' section at the very top (directly below the '# Changelog' heading)
+- Only include meaningful changes: features, bug fixes, breaking changes, perf improvements
+- Skip any commit that is only: chore, deploy, dist, demo, docs, README, backlog, format, prettier, gif, preview, CI internals
+- Each bullet: concise, imperative tense, 1 line (e.g. 'Add: custom transform option')
+- If zero meaningful commits exist, write '- Internal/infrastructure changes only'
+- Do NOT modify any existing changelog entries" \
+  --allowedTools "Read,Edit,Write" 2>&1
+
+bun run format
+
 # ── commit + tag + push (GHA workflow handles npm publish) ────────────────────
-git add package.json bun.lock README.md tests/bun.lock
+git add package.json bun.lock README.md changelog.md tests/bun.lock
 git commit -m "chore: release $NEW"
 git tag "$TAG"
 git push origin HEAD

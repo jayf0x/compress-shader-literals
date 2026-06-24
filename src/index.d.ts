@@ -12,6 +12,18 @@ export interface CompressShaderLiteralsOptions {
   exclude?: FilterPattern;
   /** Print a bytes-saved summary after build. Default: `false` */
   outputRatio?: boolean;
+  /** Custom minifier, replaces the built-in `minifyShader`. Receives the raw literal, returns the transformed source. */
+  transform?: (shader: string) => string;
+  /** Log each file's discovered literals to the console. Default: `false` */
+  debug?: boolean;
+}
+
+/** A shader literal discovered in source. */
+export interface ShaderLiteral {
+  tag: string;
+  value: string;
+  start: number;
+  end: number;
 }
 
 /**
@@ -21,3 +33,9 @@ export interface CompressShaderLiteralsOptions {
  * `.webpack()`, `.esbuild()`, `.rspack()`, `.rolldown()`, `.farm()`.
  */
 export declare const compressShaderLiterals: UnpluginInstance<CompressShaderLiteralsOptions | undefined, boolean>;
+
+/** Find tagged (`glsl\`...\``) and comment-prefixed (`/* wgsl *\/ \`...\``) shader literals in source. */
+export declare function extractShaderLiterals(code: string, tags?: string[]): ShaderLiteral[];
+
+/** Strip comments and collapse whitespace in a shader source string. */
+export declare function minifyShader(src: string): string;

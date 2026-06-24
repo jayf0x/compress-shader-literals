@@ -65,12 +65,14 @@ export default { plugins: [compressShaderLiterals.vite({ outputRatio: true })] }
 
 ## Options
 
-| Option        | Default                      | Description                             |
-| ------------- | ---------------------------- | --------------------------------------- |
-| `tags`        | `['glsl', 'wgsl', 'shader']` | Tag names / comment markers to match    |
-| `include`     | `[/\.[jt]sx?$/]`             | Files to process                        |
-| `exclude`     | `[/node_modules/, /dist/]`   | Files to skip                           |
-| `outputRatio` | `false`                      | Print a bytes-saved summary after build |
+| Option        | Default                      | Description                                        |
+| ------------- | ---------------------------- | -------------------------------------------------- |
+| `tags`        | `['glsl', 'wgsl', 'shader']` | Tag names / comment markers to match               |
+| `include`     | `[/\.[jt]sx?$/]`             | Files to process                                   |
+| `exclude`     | `[/node_modules/, /dist/]`   | Files to skip                                      |
+| `outputRatio` | `false`                      | Print a bytes-saved summary after build            |
+| `transform`   | built-in `minifyShader`      | Custom minifier — `(shader: string) => string`     |
+| `debug`       | `false`                      | Log each file's discovered literals to the console |
 
 ---
 
@@ -94,6 +96,19 @@ const frag = /* wgsl */ `
 ```
 
 Both collapse to a single tight line — no comments, no padding.
+
+## Programmatic API
+
+The two core helpers are exported for tooling authors (validators, ESLint rules, CLIs) — no need to reach for the plugin:
+
+```js
+import { extractShaderLiterals, minifyShader } from 'compress-shader-literals';
+
+extractShaderLiterals('const v = glsl`void main() {}`');
+// → [{ tag: 'glsl', value: 'void main() {}', start: 10, end: 26 }]
+
+minifyShader('// comment\nvoid  main() {}'); // → 'void main() {}'
+```
 
 ## How it works
 
