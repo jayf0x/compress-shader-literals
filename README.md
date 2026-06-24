@@ -9,7 +9,7 @@
 [![npm downloads](https://img.shields.io/npm/dm/compress-shader-literals?color=success)](https://www.npmjs.com/package/compress-shader-literals)
 [![license](https://img.shields.io/npm/l/compress-shader-literals?color=blue)](./LICENSE)
 
-Smaller WebGL & WebGPU bundles for free — shrink your shaders at build time, in any bundler.
+Your shaders ship to users as strings. This strips the comments and whitespace out of them at build time, before your bundler ever sees them — in any bundler.
 
 ![Alt Preview](./assets/preview.png)
 
@@ -63,7 +63,24 @@ export default { plugins: [compressShaderLiterals.vite({ outputRatio: true })] }
 // Rspack / Rolldown / Farm       →  .rspack() / .rolldown() / .farm()
 ```
 
-## Options
+It finds tagged and comment-prefixed literals — and yes, the comment form keeps your editor's syntax highlighting:
+
+```ts
+const vert = glsl`
+  // vertex shader  ← stripped
+  precision highp float;
+  void main() { gl_Position = vec4(0.0); }
+`;
+
+const frag = /* wgsl */ `
+  /* fragment */
+  fn main() {}
+`;
+```
+
+Both collapse to a single tight line. No comments, no padding, no touched source files.
+
+**Options**
 
 | Option        | Default                      | Description                                        |
 | ------------- | ---------------------------- | -------------------------------------------------- |
@@ -74,32 +91,7 @@ export default { plugins: [compressShaderLiterals.vite({ outputRatio: true })] }
 | `transform`   | built-in `minifyShader`      | Custom minifier — `(shader: string) => string`     |
 | `debug`       | `false`                      | Log each file's discovered literals to the console |
 
----
-
-## What it compresses
-
-Comments, indentation, and blank lines — stripped from your `glsl` / `wgsl` literals before your bundler even runs. Zero source changes, full sourcemaps. One [unplugin](https://github.com/unjs/unplugin) covers **Vite, Rollup, webpack, esbuild, Rspack, Rolldown & Farm**.
-
-```ts
-// Tagged template literal
-const vert = glsl`
-  // vertex shader  ← stripped
-  precision highp float;
-  void main() { gl_Position = vec4(0.0); }
-`;
-
-// Comment-prefixed template literal (keeps editor syntax highlighting)
-const frag = /* wgsl */ `
-  /* fragment */
-  fn main() {}
-`;
-```
-
-Both collapse to a single tight line — no comments, no padding.
-
-## Programmatic API
-
-The two core helpers are exported for tooling authors (validators, ESLint rules, CLIs) — no need to reach for the plugin:
+**Programmatic API** — the two core helpers are exported for tooling authors (validators, ESLint rules, CLIs), no plugin required:
 
 ```js
 import { extractShaderLiterals, minifyShader } from 'compress-shader-literals';
@@ -112,10 +104,14 @@ minifyShader('// comment\nvoid  main() {}'); // → 'void main() {}'
 
 ## How it works
 
+Nothing clever, which is the point:
+
 1. Parses each matched file with Babel (TS/JSX aware).
 2. Finds tagged and comment-prefixed shader literals.
 3. Strips comments + collapses whitespace via [`magic-string`](https://github.com/Rich-Harris/magic-string), so **sourcemaps stay intact**.
 4. Runs as a `pre` transform, so your bundler's own minifier still sees the result.
+
+One [unplugin](https://github.com/unjs/unplugin) covers **Vite, Rollup, webpack, esbuild, Rspack, Rolldown & Farm**.
 
 ## License
 
