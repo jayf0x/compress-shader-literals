@@ -1,5 +1,11 @@
 # Changelog
 
+## v0.0.6
+
+- Expose core API
+- Add transform hook option
+- Add debug flag
+
 ## v0.0.5
 
 Baseline. Universal unplugin (Vite, Rollup, webpack, esbuild, Rspack, Rolldown, Farm) that minifies GLSL/WGSL shader template literals at build time:
