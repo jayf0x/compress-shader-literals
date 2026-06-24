@@ -9,6 +9,10 @@
 
 Smaller WebGL & WebGPU bundles for free — shrink your shaders at build time, in any bundler.
 
+> ⭐ Star this repository to support development and help others discover it.
+
+[![Star History Chart](https://api.star-history.com/svg?repos=jayf0x/compress-shader-literals&type=Date)](https://star-history.com/#jayf0x/compress-shader-literals&Date)
+
 ![Alt Preview](./assets/preview.png)
 
 ## Stats
