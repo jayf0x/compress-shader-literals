@@ -2,7 +2,7 @@
   "name": "compress-shader-literals",
   "version": "0.0.8",
   "type": "module",
-  "description": "Size matters. Minify GLSL/WGSL shader template literals at build time — universal plugin for Vite, Rollup, webpack, esbuild & more.",
+  "description": "Size matters. Minify GLSL/WGSL shader template literals at build time \u2014 universal plugin for Vite, Rollup, webpack, esbuild & more.",
   "keywords": [
     "shader",
     "glsl",
@@ -40,13 +40,14 @@
   "bugs": {
     "url": "https://github.com/jayF0x/compress-shader-literals/issues"
   },
-  "main": "./dist/index.js",
+  "main": "./dist/index.cjs",
   "module": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
-      "import": "./dist/index.js"
+      "import": "./dist/index.js",
+      "require": "./dist/index.cjs"
     }
   },
   "files": [
@@ -54,7 +55,7 @@
   ],
   "sideEffects": false,
   "scripts": {
-    "build": "bun build src/plugin.js --outdir dist --entry-naming index.js --target node --format esm --external @babel/parser --external @babel/traverse --external @rollup/pluginutils --external byte-snap --external magic-string --external unplugin && cp src/index.d.ts dist/index.d.ts",
+    "build": "bun build src/plugin.js --outdir dist --entry-naming index.js --target node --format esm --external @babel/parser --external @babel/traverse --external @rollup/pluginutils --external byte-snap --external magic-string --external unplugin && cp src/index.d.ts dist/index.d.ts && bun build src/plugin.js --outdir dist --entry-naming index.cjs --target node --format cjs --external @babel/parser --external @babel/traverse --external @rollup/pluginutils --external byte-snap --external magic-string --external unplugin",
     "typecheck": "tsc --noEmit --strict --skipLibCheck src/index.d.ts",
     "test": "bun test",
     "test:run": "bun test",
@@ -63,7 +64,8 @@
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "npm:deploy": "bash ./scripts/publish-npm.sh",
-    "rm:stalepr": "git branch -vv | grep '\\[gone\\]' | awk '{print $1}' | xargs git branch -D"
+    "rm:stalepr": "git branch -vv | grep '\\[gone\\]' | awk '{print $1}' | xargs git branch -D",
+    "size": "size-limit"
   },
   "dependencies": {
     "@babel/parser": "^8.0.0",
@@ -76,6 +78,17 @@
   "devDependencies": {
     "@trivago/prettier-plugin-sort-imports": "^5.0.0",
     "prettier": "^3.0.0",
-    "typescript": "^5.6.0"
-  }
+    "typescript": "^5.6.0",
+    "size-limit": "^11.0.0",
+    "@size-limit/file": "^11.0.0"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "size-limit": [
+    {
+      "path": "dist/index.js",
+      "limit": "1.7 kB"
+    }
+  ]
 }
