@@ -34,11 +34,11 @@
   "author": "jayF0x",
   "repository": {
     "type": "git",
-    "url": "https://github.com/jayf0x/compress-shader-literals"
+    "url": "git+https://github.com/jayf0x/compress-shader-literals.git"
   },
-  "homepage": "https://github.com/jayF0x/compress-shader-literals#readme",
+  "homepage": "https://github.com/jayf0x/compress-shader-literals#readme",
   "bugs": {
-    "url": "https://github.com/jayF0x/compress-shader-literals/issues"
+    "url": "https://github.com/jayf0x/compress-shader-literals/issues"
   },
   "main": "./dist/index.cjs",
   "module": "./dist/index.js",
