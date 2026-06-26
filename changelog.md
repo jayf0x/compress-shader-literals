@@ -1,5 +1,9 @@
 # Changelog
 
+## v0.0.10
+
+- Upgrade byte-snap
+
 ## v0.0.9
 
 - Normalize repository URL format and casing
