@@ -1,5 +1,9 @@
 # Changelog
 
+## v0.0.9
+
+- Normalize repository URL format and casing
+
 ## v0.0.8
 
 - Internal/infrastructure changes only

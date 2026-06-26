@@ -1,6 +1,6 @@
 {
   "name": "compress-shader-literals",
-  "version": "0.0.8",
+  "version": "0.0.9",
   "type": "module",
   "description": "Size matters. Minify GLSL/WGSL shader template literals at build time — universal plugin for Vite, Rollup, webpack, esbuild & more.",
   "keywords": [
