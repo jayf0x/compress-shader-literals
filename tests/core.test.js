@@ -1,6 +1,6 @@
 import { expect, test } from 'bun:test';
 
-import { extractShaderLiterals, minifyShader } from './core.js';
+import { extractShaderLiterals, minifyShader } from '../src/core.js';
 
 test('minifyShader strips comments and collapses whitespace', () => {
   const src = `

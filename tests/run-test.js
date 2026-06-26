@@ -1,6 +1,6 @@
-import { compressShaderLiterals } from './index.js';
+import { compressShaderLiterals } from '../src/index.js';
 
-// Self-contained demo: run with `node src/run-test.js`
+// Self-contained demo: run with `node tests/run-test.js`
 const code = `
 const vert = /* glsl */ \`
   // vertex shader

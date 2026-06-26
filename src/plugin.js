@@ -1,9 +1,13 @@
 import { createFilter } from '@rollup/pluginutils';
-import { diff, snap } from 'byte-snap';
 import MagicString from 'magic-string';
 import { createUnplugin } from 'unplugin';
 
 import { extractShaderLiterals, minifyShader } from './core.js';
+
+// plugin.js is the build entry (index.js tree-shakes to nothing under
+// sideEffects:false), so re-export the public core API here too — keeps dist's
+// runtime exports matching index.d.ts.
+export { extractShaderLiterals, minifyShader } from './core.js';
 
 export const compressShaderLiterals = createUnplugin((options = {}) => {
   const tags = options.tags || ['glsl', 'wgsl', 'shader'];
@@ -56,8 +60,11 @@ export const compressShaderLiterals = createUnplugin((options = {}) => {
       };
     },
 
-    buildEnd() {
+    async buildEnd() {
       if (options.outputRatio && beforeText) {
+        // byte-snap is ESM-only; import it lazily so the CJS build loads without
+        // it and consumers only pay for it when outputRatio is on.
+        const { diff, snap } = await import('byte-snap');
         diff(snap.text(beforeText), snap.text(afterText)).print();
       }
     },

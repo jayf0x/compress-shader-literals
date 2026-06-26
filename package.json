@@ -2,7 +2,7 @@
   "name": "compress-shader-literals",
   "version": "0.0.8",
   "type": "module",
-  "description": "Size matters. Minify GLSL/WGSL shader template literals at build time \u2014 universal plugin for Vite, Rollup, webpack, esbuild & more.",
+  "description": "Size matters. Minify GLSL/WGSL shader template literals at build time — universal plugin for Vite, Rollup, webpack, esbuild & more.",
   "keywords": [
     "shader",
     "glsl",
@@ -59,6 +59,7 @@
     "typecheck": "tsc --noEmit --strict --skipLibCheck src/index.d.ts",
     "test": "bun test",
     "test:run": "bun test",
+    "test:build": "bun run build && node tests/build-smoke.js",
     "test:validate": "cd tests && bun install && node validate.js",
     "test:e2e": "cd tests && bun install && node e2e.js",
     "format": "prettier --write .",

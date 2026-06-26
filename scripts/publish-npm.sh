@@ -47,6 +47,7 @@ bun -e "
 bun run build
 bun run typecheck
 bun run test
+node tests/build-smoke.js   # dist/ (ESM + CJS) actually loads and transforms
 
 # ── refresh real-world stats (local only) ────────────────────────────────────
 ( cd tests && bun install && node e2e.js --write )
