@@ -1,8 +1,10 @@
 import { createFilter } from '@rollup/pluginutils';
+import { diff, snap } from 'byte-snap';
 import MagicString from 'magic-string';
 import { createUnplugin } from 'unplugin';
 
 import { extractShaderLiterals, minifyShader } from './core.js';
+import { DEFAULT_EXCLUDE, DEFAULT_INCLUDE, DEFAULT_TAGS } from './defaults.js';
 
 // plugin.js is the build entry (index.js tree-shakes to nothing under
 // sideEffects:false), so re-export the public core API here too — keeps dist's
@@ -10,9 +12,9 @@ import { extractShaderLiterals, minifyShader } from './core.js';
 export { extractShaderLiterals, minifyShader } from './core.js';
 
 export const compressShaderLiterals = createUnplugin((options = {}) => {
-  const tags = options.tags || ['glsl', 'wgsl', 'shader'];
+  const tags = options.tags || DEFAULT_TAGS;
   const minify = options.transform || minifyShader;
-  const filter = createFilter(options.include || [/\.[jt]sx?$/], options.exclude || [/node_modules/, /dist/]);
+  const filter = createFilter(options.include || DEFAULT_INCLUDE, options.exclude || DEFAULT_EXCLUDE);
 
   // Accumulate the shader source before/after so byte-snap can report the diff.
   let beforeText = '';
@@ -60,11 +62,8 @@ export const compressShaderLiterals = createUnplugin((options = {}) => {
       };
     },
 
-    async buildEnd() {
+    buildEnd() {
       if (options.outputRatio && beforeText) {
-        // byte-snap is ESM-only; import it lazily so the CJS build loads without
-        // it and consumers only pay for it when outputRatio is on.
-        const { diff, snap } = await import('byte-snap');
         diff(snap.text(beforeText), snap.text(afterText)).print();
       }
     },

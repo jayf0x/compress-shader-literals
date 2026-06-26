@@ -11,6 +11,7 @@ Intent: stay tiny and boring. This is a one-job tool. Resist scope creep.
 | Path                     | Role                                                              |
 | ------------------------ | ----------------------------------------------------------------- |
 | `src/core.js`            | The engine: `extractShaderLiterals` (Babel AST) + `minifyShader`  |
+| `src/defaults.js`        | Shared defaults + patterns (tags, include/exclude, comment regex)  |
 | `src/plugin.js`          | unplugin wrapper; `outputRatio` stats via `byte-snap`             |
 | `src/index.js`           | Re-export entry                                                   |
 | `src/index.d.ts`         | Hand-written types (no TS build — copied to `dist/` on build)     |
@@ -40,7 +41,8 @@ bun run npm:deploy  # bump + build + typecheck + test + e2e + commit + tag (GHA 
 - **Runtime deps must be `--external` in the build script** (they're declared in `dependencies`, not bundled). Add a new runtime dep → add it to the `--external` list too.
 - **Adding a benchmark package:** `bun add <pkg>` in `tests/`, then append to `PACKAGES` in `tests/e2e.js`. Only packages shipping their _own_ GLSL/WGSL template literals will register; renderers that consume user shaders contribute 0.
 - **README stats are generated**, between `<!-- STATS:START/END -->`. Edit `tests/e2e.js`, not the table. The release script runs `e2e --write` then `format` so the committed table stays prettier-clean.
-- **`byte-snap`** (the npm dependency) is the stats engine for `outputRatio`. It's ESM-only, so `plugin.js` loads it via lazy `await import('byte-snap')` inside `buildEnd` — a top-level import would break the CJS build's `require`. Keep it lazy.
+- **`byte-snap`** (the npm dependency) is the stats engine for `outputRatio`. It ships a `require` export from **1.0.5** on, so the CJS build can `require` it — keep the dependency floor at `^1.0.5`. `tests/build-smoke.js` would catch a regression here.
+- **Defaults live in `src/defaults.js`.** Tags, include/exclude, and the comment-tag regex are defined once; the regex is derived from the tag list so custom `tags` work in `/* tag */` form too. Don't re-inline these literals in `core.js`/`plugin.js`.
 
 ## Conventions
 

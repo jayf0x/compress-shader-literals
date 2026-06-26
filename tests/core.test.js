@@ -36,6 +36,13 @@ test('extractShaderLiterals finds comment-prefixed literals', () => {
   expect(lits[0].tag).toBe('wgsl');
 });
 
+test('extractShaderLiterals honors custom tags in comment form', () => {
+  const code = 'const v = /* myshader */ `void main() {}`;';
+  const lits = extractShaderLiterals(code, ['myshader']);
+  expect(lits).toHaveLength(1);
+  expect(lits[0].tag).toBe('myshader');
+});
+
 test('extractShaderLiterals ignores untagged literals', () => {
   const code = 'const v = `just a string`;';
   expect(extractShaderLiterals(code)).toHaveLength(0);

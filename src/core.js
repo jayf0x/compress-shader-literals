@@ -1,10 +1,13 @@
 import { parse } from '@babel/parser';
 import _traverse from '@babel/traverse';
 
+import { DEFAULT_TAGS, tagCommentRe } from './defaults.js';
+
 const traverse = _traverse.default || _traverse;
 
-export function extractShaderLiterals(code, tags = ['glsl', 'wgsl', 'shader']) {
+export const extractShaderLiterals = (code, tags = DEFAULT_TAGS) => {
   const tagSet = new Set(tags);
+  const commentRe = tagCommentRe(tags);
   const literals = [];
 
   try {
@@ -46,7 +49,7 @@ export function extractShaderLiterals(code, tags = ['glsl', 'wgsl', 'shader']) {
         const leadingComments = node.leadingComments || path.parentPath?.node?.leadingComments || [];
         for (const comment of leadingComments) {
           if (!comment || comment.type !== 'CommentBlock') continue;
-          const m = comment.value.match(/^\s*(glsl|wgsl|shader)\s*$/);
+          const m = comment.value.match(commentRe);
           if (m) {
             literals.push({
               tag: m[1],
@@ -59,18 +62,19 @@ export function extractShaderLiterals(code, tags = ['glsl', 'wgsl', 'shader']) {
         }
       },
     });
-  } catch (e) {
-    // Best-effort: Ignore parsing errors for non-standard or malformed baseline files
+  } catch (err) {
+    // Source we don't parse (exotic syntax, partial files) has no literals to
+    // extract — skip it. A non-syntax failure is our bug, so let it surface.
+    if (err.name !== 'SyntaxError') throw err;
   }
 
   return literals;
-}
+};
 
-export function minifyShader(src) {
-  return src
+export const minifyShader = (src) =>
+  src
     .replace(/\/\*[\s\S]*?\*\//g, '')
     .replace(/\/\/.*$/gm, '')
     .replace(/[ \t]+/g, ' ')
     .replace(/\n{2,}/g, '\n')
     .trim();
-}
