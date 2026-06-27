@@ -11,7 +11,7 @@ Intent: stay tiny and boring. This is a one-job tool. Resist scope creep.
 | Path                     | Role                                                              |
 | ------------------------ | ----------------------------------------------------------------- |
 | `src/core.js`            | The engine: `extractShaderLiterals` (Babel AST) + `minifyShader`  |
-| `src/defaults.js`        | Shared defaults + patterns (tags, include/exclude, comment regex)  |
+| `src/defaults.js`        | Shared defaults + patterns (tags, include/exclude, comment regex) |
 | `src/plugin.js`          | unplugin wrapper; `outputRatio` stats via `byte-snap`             |
 | `src/index.js`           | Re-export entry                                                   |
 | `src/index.d.ts`         | Hand-written types (no TS build — copied to `dist/` on build)     |
