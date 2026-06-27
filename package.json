@@ -55,7 +55,8 @@
   ],
   "sideEffects": false,
   "scripts": {
-    "build": "bun build src/plugin.js --outdir dist --entry-naming index.js --target node --format esm --external @babel/parser --external @babel/traverse --external @rollup/pluginutils --external byte-snap --external magic-string --external unplugin && cp src/index.d.ts dist/index.d.ts && bun build src/plugin.js --outdir dist --entry-naming index.cjs --target node --format cjs --external @babel/parser --external @babel/traverse --external @rollup/pluginutils --external byte-snap --external magic-string --external unplugin",
+    "build": "vite build && cp src/index.d.ts dist/index.d.ts",
+    "build_old": "bun build src/plugin.js --outdir dist --entry-naming index.js --target node --format esm --external @babel/parser --external @babel/traverse --external @rollup/pluginutils --external byte-snap --external magic-string --external unplugin && cp src/index.d.ts dist/index.d.ts && bun build src/plugin.js --outdir dist --entry-naming index.cjs --target node --format cjs --external @babel/parser --external @babel/traverse --external @rollup/pluginutils --external byte-snap --external magic-string --external unplugin",
     "typecheck": "tsc --noEmit --strict --skipLibCheck src/index.d.ts",
     "test": "bun test",
     "test:run": "bun test",
@@ -77,11 +78,12 @@
     "unplugin": "^3.0.0"
   },
   "devDependencies": {
+    "@size-limit/file": "^11.0.0",
     "@trivago/prettier-plugin-sort-imports": "^5.0.0",
     "prettier": "^3.0.0",
-    "typescript": "^5.6.0",
     "size-limit": "^11.0.0",
-    "@size-limit/file": "^11.0.0"
+    "typescript": "^5.6.0",
+    "vite": "^8.1.0"
   },
   "engines": {
     "node": ">=18"
