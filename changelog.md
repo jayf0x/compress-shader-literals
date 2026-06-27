@@ -1,5 +1,9 @@
 # Changelog
 
+## v1.0.0
+
+- Integrate Vite and byte-snap for optimized bundling
+
 ## v0.0.10
 
 - Upgrade byte-snap
