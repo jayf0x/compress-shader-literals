@@ -1,5 +1,11 @@
 # Changelog
 
+## v1.0.1
+
+- Fix handling of interpolated tagged templates
+- Improve issues and compatibility
+- Update byte-snap
+
 ## v1.0.0
 
 - Integrate Vite and byte-snap for optimized bundling
