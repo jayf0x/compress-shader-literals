@@ -113,6 +113,10 @@ Nothing clever, which is the point:
 
 One [unplugin](https://github.com/unjs/unplugin) covers **Vite, Rollup, webpack, esbuild, Rspack, Rolldown & Farm**.
 
+## Issues & compatibility
+
+If you run into any problems — wrong output, a shader pattern that isn't picked up, or a library that doesn't play nicely — please [open an issue](https://github.com/jayf0x/compress-shader-literals/issues) or just mention which library you're using and I'll add it to the test suite.
+
 ## License
 
 [MIT](./LICENSE) © [jayF0x](https://github.com/jayf0x)
