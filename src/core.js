@@ -33,10 +33,10 @@ export const extractShaderLiterals = (code, tags = DEFAULT_TAGS) => {
           tagName = tag.property.name;
         }
 
-        if (tagName) {
+        if (tagName && quasi.expressions.length === 0) {
           literals.push({
             tag: tagName,
-            value: quasi.quasis.map((q) => q.value.raw).join(''),
+            value: quasi.quasis[0].value.raw,
             start: quasi.start,
             end: quasi.end,
           });
@@ -46,6 +46,7 @@ export const extractShaderLiterals = (code, tags = DEFAULT_TAGS) => {
       // Handle comment-prefixed templates: /* wgsl */ `...`
       TemplateLiteral(path) {
         const node = path.node;
+        if (node.expressions.length > 0) return;
         const leadingComments = node.leadingComments || path.parentPath?.node?.leadingComments || [];
         for (const comment of leadingComments) {
           if (!comment || comment.type !== 'CommentBlock') continue;
@@ -53,7 +54,7 @@ export const extractShaderLiterals = (code, tags = DEFAULT_TAGS) => {
           if (m) {
             literals.push({
               tag: m[1],
-              value: node.quasis.map((q) => q.value.raw).join(''),
+              value: node.quasis[0].value.raw,
               start: node.start,
               end: node.end,
             });
@@ -73,6 +74,7 @@ export const extractShaderLiterals = (code, tags = DEFAULT_TAGS) => {
 
 export const minifyShader = (src) =>
   src
+    .replace(/\r\n/g, '\n')
     .replace(/\/\*[\s\S]*?\*\//g, '')
     .replace(/\/\/.*$/gm, '')
     .replace(/[ \t]+/g, ' ')

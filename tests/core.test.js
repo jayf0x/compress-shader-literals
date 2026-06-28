@@ -47,3 +47,19 @@ test('extractShaderLiterals ignores untagged literals', () => {
   const code = 'const v = `just a string`;';
   expect(extractShaderLiterals(code)).toHaveLength(0);
 });
+
+test('extractShaderLiterals skips interpolated tagged templates', () => {
+  const code = 'const v = glsl`vec3 c = ${myColor}; void main() {}`;';
+  expect(extractShaderLiterals(code, ['glsl'])).toHaveLength(0);
+});
+
+test('extractShaderLiterals skips interpolated comment-prefixed templates', () => {
+  const code = 'const v = /* glsl */ `vec3 c = ${myColor}; void main() {}`;';
+  expect(extractShaderLiterals(code)).toHaveLength(0);
+});
+
+test('minifyShader normalizes CRLF line endings', () => {
+  const out = minifyShader('void main() {}\r\n\r\nvoid foo() {}');
+  expect(out).not.toContain('\r');
+  expect(out).toBe('void main() {}\nvoid foo() {}');
+});
