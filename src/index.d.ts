@@ -6,7 +6,7 @@ type FilterPattern = string | RegExp | ReadonlyArray<string | RegExp> | null;
 export interface CompressShaderLiteralsOptions {
   /** Tag names / comment markers to match. Default: `['glsl', 'wgsl', 'shader']` */
   tags?: string[];
-  /** Files to process. Default: `[/\.[jt]sx?$/]` */
+  /** Files to process. Default: `[/\.[mc]?[jt]sx?$/]` (the JS/TS family Babel can parse). */
   include?: FilterPattern;
   /** Files to skip. Default: `[/node_modules/, /dist/]` */
   exclude?: FilterPattern;

@@ -3,6 +3,7 @@
   "private": true,
   "type": "module",
   "dependencies": {
+    "@shaderfrog/glsl-parser": "^0.2.4",
     "@jayf0x/fluidity-js": "0.2.7",
     "curtainsjs": "^8.1.6",
     "ogl": "^1.0.11",
