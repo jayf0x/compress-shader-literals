@@ -3,11 +3,11 @@
   "private": true,
   "type": "module",
   "dependencies": {
+    "three": "^0.184.0",
     "@shaderfrog/glsl-parser": "^0.2.4",
-    "@jayf0x/fluidity-js": "0.2.7",
     "curtainsjs": "^8.1.6",
     "ogl": "^1.0.11",
     "shader-park-core": "^0.2.8",
-    "three": "^0.184.0"
+    "@jayf0x/fluidity-js": "^1.0.4"
   }
 }

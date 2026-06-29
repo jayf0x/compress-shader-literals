@@ -140,13 +140,13 @@ if (v.broken > 0) {
 }
 
 // One honest, machine-checked line for the README caption.
-const validityNote = `${v.glslOk} of ${v.glslOk + v.broken} parseable GLSL shaders verified still valid after minify (0 broken)`;
+const validityNote = `${v.glslOk}/${v.glslOk + v.broken} parseable GLSL verified valid after minify`;
 
 if (process.argv.includes('--write')) {
   const readme = resolve(here, '..', 'README.md');
   const md = readFileSync(readme, 'utf8');
   const date = new Date().toISOString().slice(0, 10);
-  const caption = `_Engine benchmark — [\`tests/e2e.js\`](tests/e2e.js) runs the built-in \`minifyShader\` over every shader literal these libraries ship (detected by content, since they don't tag their shaders). ${validityNote}. Packages [verified](tests/validate.js) loadable · ${date}_`;
+  const caption = `_${tCount} shaders · ${validityNote} · [how this is measured](docs/stats.md) · ${date}_`;
   const block = `<!-- STATS:START -->\n${table}\n\n${caption}\n<!-- STATS:END -->`;
   const next = md.replace(/<!-- STATS:START -->[\s\S]*?<!-- STATS:END -->/, block);
   if (next === md) {

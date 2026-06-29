@@ -9,66 +9,37 @@
 [![npm downloads](https://img.shields.io/npm/dm/compress-shader-literals?color=success)](https://www.npmjs.com/package/compress-shader-literals)
 [![license](https://img.shields.io/npm/l/compress-shader-literals?color=blue)](./LICENSE)
 
-Your shaders ship to users as strings. This strips the comments and whitespace out of them at build time, before your bundler ever sees them — in any bundler.
-
-The only minifier that reaches shaders already written as template literals in JS/TS — across any bundler — without renaming, without a toolchain, without runtime cost.
+A build-time minifier that strips comments and whitespace from GLSL & WGSL shaders written as template literals in your JS/TS — in any bundler, with no renaming, no toolchain, and no runtime cost.
 
 ![Alt Preview](./assets/preview.png)
-
-## Stats
-
-The table below is an **engine benchmark**: it runs the built-in minifier over every shader these libraries ship and reports the bytes removed. Note two things, so the numbers aren't misread:
-
-- These libraries **don't tag their shaders**, so the benchmark finds them by content. The plugin matches by tag (`` glsl`…` `` / `/* glsl */`), so out of the box it minifies **your own tagged shaders**, not a dependency's. Scanning dependencies is opt-in (clear `exclude`, and match by content with a custom `transform`).
-- Every GLSL shader in this set is **parsed before and after** with [`@shaderfrog/glsl-parser`](https://github.com/shaderfrog/glsl-parser); the run fails if minify breaks one. The caption records the verified count.
-
-<!-- STATS:START -->
-
-| Package               | Shaders |    Before |     After |     Saved |
-| --------------------- | ------: | --------: | --------: | --------: |
-| `three`               |     281 | 240,772 B | 203,428 B | **15.5%** |
-| `@jayf0x/fluidity-js` |       9 |  11,095 B |   7,788 B | **29.8%** |
-| `ogl`                 |      22 |   6,109 B |   5,335 B | **12.7%** |
-| `shader-park-core`    |      18 |  10,794 B |   9,033 B | **16.3%** |
-| `curtainsjs`          |       7 |   3,406 B |   2,563 B | **24.8%** |
-| **Total**             |     337 | 272,176 B | 228,147 B | **16.2%** |
-
-_Engine benchmark — [`tests/e2e.js`](tests/e2e.js) runs the built-in `minifyShader` over every shader literal these libraries ship (detected by content, since they don't tag their shaders). 312 of 312 parseable GLSL shaders verified still valid after minify (0 broken). Packages [verified](tests/validate.js) loadable · 2026-06-29_
-
-<!-- STATS:END -->
-
-<!-- <a href="https://star-history.com/#jayf0x/compress-shader-literals&Date">
-  <picture>
-    <source media="(prefers-color-scheme: dark)" srcset="https://api.star-history.com/chart?repos=jayf0x/compress-shader-literals&type=Date&theme=dark&legend=top-left" />
-    <source media="(prefers-color-scheme: light)" srcset="https://api.star-history.com/chart?repos=jayf0x/compress-shader-literals&type=Date&legend=top-left" />
-    <img alt="Star History Chart" src="https://api.star-history.com/chart?repos=jayf0x/compress-shader-literals&type=Date&legend=top-left" />
-  </picture>
-</a> -->
 
 ## Install
 
 ```sh
-npm i -D compress-shader-literals
-# or: bun add -d compress-shader-literals
+bun add -d compress-shader-literals
+# or: npm i -D compress-shader-literals
 ```
+
+## About
+
+Shaders ship to your users as strings. The comments and indentation that make them readable are dead weight in the bundle — the GPU ignores them, but the browser still downloads them. This removes them at build time, before your bundler sees the code.
+
+It only strips comments and collapses whitespace. It does not rename identifiers, remove dead code, or fold constants, so the output stays valid and readable. For aggressive size-coding (4k intros and the like), reach for a heavier tool like [Shader Minifier](https://github.com/laurentlb/shader-minifier).
 
 ## Usage
 
-Pick your bundler — same plugin, same options:
+One [unplugin](https://github.com/unjs/unplugin) plugin, same API for every bundler:
 
 ```js
 import { compressShaderLiterals } from 'compress-shader-literals';
 
-// Vite        vite.config.js
+// vite.config.js
 export default { plugins: [compressShaderLiterals.vite({ outputRatio: true })] };
-
-// Rollup      rollup.config.js   →  compressShaderLiterals.rollup({ ... })
-// webpack     webpack.config.js  →  compressShaderLiterals.webpack({ ... })
-// esbuild     build script       →  compressShaderLiterals.esbuild({ ... })
-// Rspack / Rolldown / Farm       →  .rspack() / .rolldown() / .farm()
 ```
 
-It finds tagged and comment-prefixed literals — and yes, the comment form keeps your editor's syntax highlighting:
+For Rollup, webpack, esbuild, Rspack, Rolldown or Farm, call the matching method — `.rollup()`, `.webpack()`, `.esbuild()`, `.rspack()`, `.rolldown()`, `.farm()` — with the same options.
+
+It finds tagged and comment-prefixed literals — the comment form keeps your editor's syntax highlighting:
 
 ```ts
 const vert = glsl`
@@ -82,8 +53,6 @@ const frag = /* wgsl */ `
   fn main() {}
 `;
 ```
-
-Both collapse to a single tight line. No comments, no padding, no touched source files.
 
 **Options**
 
@@ -107,18 +76,32 @@ extractShaderLiterals('const v = glsl`void main() {}`');
 minifyShader('// comment\nvoid  main() {}'); // → 'void main() {}'
 ```
 
+## Stats
+
+Real shaders shipped by popular libraries, run through the built-in minifier:
+
+<!-- STATS:START -->
+
+| Package               | Shaders |    Before |     After |     Saved |
+| --------------------- | ------: | --------: | --------: | --------: |
+| `three`               |     281 | 240,772 B | 203,428 B | **15.5%** |
+| `@jayf0x/fluidity-js` |       9 |  11,095 B |   7,788 B | **29.8%** |
+| `ogl`                 |      22 |   6,109 B |   5,335 B | **12.7%** |
+| `shader-park-core`    |      18 |  10,794 B |   9,033 B | **16.3%** |
+| `curtainsjs`          |       7 |   3,406 B |   2,563 B | **24.8%** |
+| **Total**             |     337 | 272,176 B | 228,147 B | **16.2%** |
+
+_337 shaders · 312/312 parseable GLSL verified valid after minify · [how this is measured](docs/stats.md) · 2026-06-29_
+
+<!-- STATS:END -->
+
 ## How it works
 
-Nothing clever, which is the point:
-
-1. Parses each matched file with Babel (TS/JSX aware) — so it covers the JS/TS family (`.js`, `.jsx`, `.ts`, `.tsx`, `.mjs`, `.cjs`, `.mts`, `.cts`), not `.vue`/`.svelte`/`.glsl` files, which aren't whole-file JS.
-2. Finds tagged and comment-prefixed shader literals.
-3. Strips comments + collapses whitespace via [`magic-string`](https://github.com/Rich-Harris/magic-string), so **sourcemaps stay intact**. Whitespace only ever collapses to a single space/newline, never to nothing, so tokens never merge and `#version`/`#define` lines survive — the output stays valid GLSL/WGSL ([proven](tests/e2e.js) against 300+ real-world shaders).
-4. Runs as a `pre` transform, so your bundler's own minifier still sees the result.
-
-It does **not** rename identifiers, eliminate dead code, or fold constants — that's a different (heavier, obfuscating) job. This only removes comments and whitespace, which is why the output stays readable and verifiably valid.
-
-One [unplugin](https://github.com/unjs/unplugin) covers **Vite, Rollup, webpack, esbuild, Rspack, Rolldown & Farm**.
+1. Parses each matched file with Babel — `.js`, `.jsx`, `.ts`, `.tsx`, `.mjs`, `.cjs`, `.mts`, `.cts` (not `.vue`/`.svelte`/`.glsl`, which aren't whole-file JS).
+2. Finds tagged (`` glsl`…` ``) and comment-prefixed (`/* glsl */ \`…\``) literals, skipping any with `${…}` interpolation.
+3. Strips comments and collapses each run of whitespace to a single space or newline — never to nothing, so adjacent tokens stay separated and `#version`/`#define` lines survive.
+4. Rewrites the literal in place with [magic-string](https://github.com/Rich-Harris/magic-string), so sourcemaps stay intact.
+5. Runs as a `pre` transform, so your bundler's own minifier still sees the result.
 
 ## Issues & compatibility
 
