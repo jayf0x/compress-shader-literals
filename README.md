@@ -22,9 +22,11 @@ bun add -d compress-shader-literals
 
 ## About
 
-Shaders ship to your users as strings. The comments and indentation that make them readable are dead weight in the bundle — the GPU ignores them, but the browser still downloads them. This removes them at build time, before your bundler sees the code.
+Shader comments and indentation are dead weight in the bundle — the GPU ignores them, the browser still downloads them. This strips them at build time.
 
-It only strips comments and collapses whitespace. It does not rename identifiers, remove dead code, or fold constants, so the output stays valid and readable. For aggressive size-coding (4k intros and the like), reach for a heavier tool like [Shader Minifier](https://github.com/laurentlb/shader-minifier).
+- Removes comments, collapses whitespace. Nothing else.
+- No renaming, no dead-code removal — output stays valid and readable.
+- Runs before your bundler's own minifier.
 
 ## Usage
 
@@ -39,7 +41,7 @@ export default { plugins: [compressShaderLiterals.vite({ outputRatio: true })] }
 
 For Rollup, webpack, esbuild, Rspack, Rolldown or Farm, call the matching method — `.rollup()`, `.webpack()`, `.esbuild()`, `.rspack()`, `.rolldown()`, `.farm()` — with the same options.
 
-It finds tagged and comment-prefixed literals — the comment form keeps your editor's syntax highlighting:
+Finds tagged and comment-prefixed literals. The comment form keeps editor syntax highlighting:
 
 ```ts
 const vert = glsl`
@@ -82,16 +84,15 @@ Real shaders shipped by popular libraries, run through the built-in minifier:
 
 <!-- STATS:START -->
 
-| Package               | Shaders |    Before |     After |     Saved |
-| --------------------- | ------: | --------: | --------: | --------: |
-| `three`               |     281 | 240,772 B | 203,428 B | **15.5%** |
-| `@jayf0x/fluidity-js` |       9 |  11,095 B |   7,788 B | **29.8%** |
-| `ogl`                 |      22 |   6,109 B |   5,335 B | **12.7%** |
-| `shader-park-core`    |      18 |  10,794 B |   9,033 B | **16.3%** |
-| `curtainsjs`          |       7 |   3,406 B |   2,563 B | **24.8%** |
-| **Total**             |     337 | 272,176 B | 228,147 B | **16.2%** |
+| Package            | Shaders |    Before |     After |     Saved |
+| ------------------ | ------: | --------: | --------: | --------: |
+| `three`            |     281 | 240,772 B | 203,428 B | **15.5%** |
+| `ogl`              |      22 |   6,109 B |   5,335 B | **12.7%** |
+| `shader-park-core` |      18 |  10,794 B |   9,033 B | **16.3%** |
+| `curtainsjs`       |       7 |   3,406 B |   2,563 B | **24.8%** |
+| **Total**          |     328 | 261,081 B | 220,359 B | **15.6%** |
 
-_337 shaders · 312/312 parseable GLSL verified valid after minify · [how this is measured](docs/stats.md) · 2026-06-29_
+_328 shaders · 303/303 parseable GLSL verified valid after minify · [how this is measured](docs/stats.md) · 2026-06-29_
 
 <!-- STATS:END -->
 

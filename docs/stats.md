@@ -15,7 +15,7 @@ These libraries don't tag their shaders, so the benchmark detects them by conten
 
 Every GLSL shader in the set is parsed before and after minify with [`@shaderfrog/glsl-parser`](https://github.com/shaderfrog/glsl-parser). The run fails if minify breaks a shader that was valid before.
 
-Latest run: **312/312** parseable GLSL shaders still valid (0 broken). WGSL has no GLSL parser to check against, and glslify fragments that don't parse on their own (missing `#include` context) are skipped.
+WGSL has no GLSL parser to check against, and glslify fragments that don't parse on their own (missing `#include` context) are skipped.
 
 ## Reproduce
 
