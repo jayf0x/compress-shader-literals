@@ -1,5 +1,10 @@
 # Changelog
 
+## v1.1.3
+
+- Strengthen default plugin behavior
+- Expand test coverage
+
 ## v1.0.1
 
 - Fix handling of interpolated tagged templates
