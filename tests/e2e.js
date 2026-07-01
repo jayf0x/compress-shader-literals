@@ -60,7 +60,11 @@ function benchPackage(pkg) {
   return count ? { pkg, count, before, after } : null;
 }
 
-const rows = packages().map(benchPackage).filter(Boolean);
+const ratio = (r) => (r.before === 0 ? 0 : (r.before - r.after) / r.before);
+const rows = packages()
+  .map(benchPackage)
+  .filter(Boolean)
+  .sort((a, b) => ratio(b) - ratio(a)); // best saved% first
 if (rows.length === 0) {
   console.error('No shaders found. Did you `bun add` the packages in tests/?');
   process.exit(1);

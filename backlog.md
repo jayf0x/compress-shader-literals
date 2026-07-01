@@ -10,30 +10,28 @@ task: add an opt-in `scan: 'loose'` option that finds tagged and comment-prefixe
 
 goal: minify shaders living in SFCs and non-JS containers without corrupting non-shader files. Gate every loose match by a content signal before stripping (reuse `SHADER_SIGNAL` in `tests/utils.js`) — the regex finds candidates, the signal confirms they're shaders.
 
+test target: `lygia` is a good showcase — it ships raw `.glsl`/`.wgsl`/`.wesl` files (and stores shaders as plain string properties in a `weslBundle`, not template literals), so the current AST scanner extracts 0 from it. A loose/file scanner would reach it. Note two blockers: its shaders are mostly `#include`-style fragments (won't pass `SHADER_SIGNAL`, which wants a full-shader marker like `void main`), and it exposes no bare import, so `validate.js` can't load it — a loose-scan benchmark would need a file-based corpus path, not the `dependencies` + import route.
+
 ## Extend shader validation — cover the WGSL/fragment blind spot
 
-files: `tests/e2e.js` + `tests/experimental.js` (GLSL gate via `@shaderfrog/glsl-parser`), `tests/utils.js` (`validateGlsl`, `continuationOk`), `src/plugin.js`
+files: `tests/e2e.js` + `tests/experimental.js` (GLSL gate via `@shaderfrog/glsl-parser`), `tests/utils.js` (`validateGlsl`), `src/plugin.js`
 
-state: as of the current corpus (869 shaders, 7 libs), the gate verifies **558 GLSL shaders (0 broken)** but leaves **190 WGSL + 121 glslify fragments = 311 (36%) unverified**. `minifyShader` runs on all of them; the only thing guarding the unverified 311 is `continuationOk` (a dialect-agnostic `\`-continuation smoke check). This is now the sharpest edge, because the aggressive whitespace pass (statement-joining) ships as the default — a real user issue would most likely come from here.
+why: the gate parse-checks GLSL only. Roughly a third of the corpus (WGSL + glslify fragments) is skipped, not verified — and `minifyShader` runs on it. Three ways to shrink that gap:
 
-task, three gaps:
-
-- **(a) WGSL has a real parser now (190 shaders, ~22% of corpus).** Wire `naga` (via `naga-wasm`) or another WGSL parser into `validateGlsl` so WGSL gets the same before/after parse guarantee as GLSL, instead of being skipped. Biggest single coverage win.
-- **(b) glslify fragments (121).** These don't parse standalone even _before_ minify (missing `#include` context), so a parser can't gate them. Best reachable guarantee is a structural invariant that doesn't need a full parse — `continuationOk` is the first; consider more (balanced braces/parens before==after, no `;` lost) rather than trying to make them parse.
-- **(c) opt-in `validate: true` in the plugin.** Re-parse each shader the plugin touches at build time and warn when one stops parsing, so real user shaders (outside the benchmark corpus) get the same guarantee. Reuse `validateGlsl`.
-
-goal: shrink the unverified 36% — WGSL parsed (a), fragments structurally guarded (b), and the guarantee extended to user shaders at build time (c).
+- **(a) Wire a real WGSL parser** (`naga` via `naga-wasm`, or similar) into `validateGlsl` so WGSL gets the same before/after parse guarantee as GLSL. Biggest single coverage win — WGSL is ~a fifth of the corpus.
+- **(b) Structural invariants for glslify fragments.** They don't parse standalone even _before_ minify (missing `#include` context), so no parser can gate them. Add parser-free before==after invariants (balanced braces/parens, `;` count preserved) on top of the existing `continuationOk` check.
+- **(c) Opt-in `validate: true` in the plugin.** Re-parse each shader the plugin touches at build time and warn when one stops parsing, so user shaders outside the benchmark corpus get the same guarantee. Reuse `validateGlsl`.
 
 ## Replace hand-rolled regexes with a parser/library
 
-files: `src/core.js` (`minifyShader` — comment + whitespace regexes), `src/defaults.js` (`tagCommentRe`), `tests/experimental/` (candidate + gate)
+files: `src/core.js` (`minifyShader` — comment + whitespace regexes), `src/defaults.js` (`tagCommentRe`), `tests/experimental.js` (candidate + gate)
 
-task: needs research first. The minifier is a stack of regexes (`/\/\*...\*\//`, `/\/\/.*$/`, whitespace collapse) — brittle and hard to reason about. Evaluate replacing them:
+task: needs research first. `minifyShader` strips comments with regexes (`/\/\*...\*\//`, `/\/\/.*$/`) and does whitespace/newline handling as a hand-rolled line pass — brittle and hard to reason about. Evaluate replacing them:
 
 - **Comment stripping:** `extract-comments` / `strip-comments` are options, but they're tuned for JS (string- and regex-literal-aware) — GLSL has no string literals, so the extra machinery buys little and adds a dependency. Confirm whether they even improve correctness over the current regex before adopting.
-- **The real regex debt is whitespace/newline handling**, which no comment library touches. Going properly regex-free there means tokenizing GLSL — `@shaderfrog/glsl-parser` is already a `tests/`-only dep and could lex → re-emit. That's the heavier, more correct path; weigh it against "stay tiny and boring" (AGENTS.md) and the fact that a tokenizer is WGSL-blind.
+- **The real debt is the whitespace/newline pass** (statement joining, `#`-directive and `\`-continuation handling), which no comment library touches. Going properly regex-free there means tokenizing GLSL — `@shaderfrog/glsl-parser` is already a `tests/`-only dep and could lex → re-emit. That's the heavier, more correct path; weigh it against "stay tiny and boring" (AGENTS.md) and the fact that a tokenizer is WGSL-blind.
 
-goal: decide, with a prototype in `tests/experimental` measured against the current regex output, whether dropping regexes is a net win (fewer edge-case bugs) or just a heavier dependency for the same result. Don't add a parser to `src` runtime deps unless it demonstrably prevents a real corruption the regexes miss.
+goal: decide, with a prototype in `tests/experimental.js` measured against the current output, whether dropping the hand-rolled passes is a net win (fewer edge-case bugs) or just a heavier dependency for the same result. Don't add a parser to `src` runtime deps unless it demonstrably prevents a real corruption the current code misses.
 
 ## Comparison / relevance stats vs other minifiers
 

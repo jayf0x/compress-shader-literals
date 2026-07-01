@@ -88,13 +88,13 @@ Real shaders shipped by popular libraries, run through the built-in minifier:
 
 | Package                 | Shaders |      Before |       After |     Saved |
 | ----------------------- | ------: | ----------: | ----------: | --------: |
-| `@babylonjs/core`       |     349 |   669,740 B |   664,617 B |  **0.8%** |
-| `@paper-design/shaders` |      30 |   142,466 B |   129,723 B |  **8.9%** |
 | `curtainsjs`            |       7 |     3,406 B |     2,485 B | **27.0%** |
-| `ogl`                   |      22 |     6,109 B |     5,182 B | **15.2%** |
 | `pixi.js`               |     162 |    75,768 B |    59,432 B | **21.6%** |
 | `shader-park-core`      |      18 |    10,794 B |     8,721 B | **19.2%** |
 | `three`                 |     281 |   240,772 B |   197,399 B | **18.0%** |
+| `ogl`                   |      22 |     6,109 B |     5,182 B | **15.2%** |
+| `@paper-design/shaders` |      30 |   142,466 B |   129,723 B |  **8.9%** |
+| `@babylonjs/core`       |     349 |   669,740 B |   664,617 B |  **0.8%** |
 | **Total**               |     869 | 1,149,055 B | 1,067,559 B |  **7.1%** |
 
 _869 shaders · 558/558 parseable GLSL verified valid after minify · [how this is measured](docs/stats.md) · 2026-07-01_
