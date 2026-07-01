@@ -1,5 +1,9 @@
 # Changelog
 
+## v1.3.1
+
+- Internal/infrastructure changes only
+
 ## v1.3.0
 
 - Improve whitespace handling around delimiters
