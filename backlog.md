@@ -18,6 +18,14 @@ task: `tests/e2e.js` already fails the run if minify breaks a GLSL shader that p
 
 goal: validity guaranteed beyond the benchmark corpus, and WGSL covered.
 
+## Compress harder (whitespace) — without becoming a heavyweight minifier
+
+files: `src/core.js` (`minifyShader`), `tests/experimental/` (prototype + measurement harness), `src/plugin.js` (byte-snap accumulation)
+
+task: `minifyShader` today leaves easy bytes on the table — a leading space per line, blank lines that survive because they're `' \n'` not `'\n\n'`, and a newline between every statement that GLSL doesn't need. Tighten the whitespace pass to trim per line, drop blank lines, and join statements (keeping real newlines only around `#` preprocessor directives, which are newline-sensitive). Stay whitespace/comment-only — identifier renaming and operator-space removal belong to heavyweight minifiers (`laurentlb/shader-minifier`) and risk breaking shaders; we are the light-weight, compatible layer.
+
+goal: measurably smaller output (raw, and a little post-gzip) with zero regressions on the GLSL validity gate. Prototype and prove it in `tests/experimental` (run `bun run tests:next`) before touching `src/core.js`; the win is mostly raw bytes, so it matters most for un-gzipped delivery and inline/parsed-at-runtime shader strings.
+
 ## Comparison / relevance stats vs other minifiers
 
 files: `tests/e2e.js`, `docs/stats.md`, README stats block, plus this session's research notes (see `laurentlb/shader-minifier`, https://www.ctrl-alt-test.fr/glsl-minifier/)

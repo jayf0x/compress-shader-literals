@@ -63,6 +63,8 @@
     "test:build": "bun run build && node tests/build-smoke.js",
     "test:validate": "cd tests && bun install && node validate.js",
     "test:e2e": "cd tests && bun install && node e2e.js",
+    "test:dump": "cd tests && bun install && node dump-chunks.js",
+    "tests:next": "cd tests && bun install && node experimental/index.js",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "npm:deploy": "bash ./scripts/publish-npm.sh",
@@ -73,7 +75,7 @@
     "@babel/parser": "^8.0.0",
     "@babel/traverse": "^8.0.0",
     "@rollup/pluginutils": "^5.4.0",
-    "byte-snap": "^1.0.6",
+    "byte-snap": "^1.1.0",
     "magic-string": "^0.30.21",
     "unplugin": "^3.0.0"
   },

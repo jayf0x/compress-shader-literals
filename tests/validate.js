@@ -13,7 +13,13 @@ import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const here = dirname(fileURLToPath(import.meta.url));
-const pkgs = Object.keys(JSON.parse(readFileSync(resolve(here, 'package.json'), 'utf8')).dependencies ?? {});
+const pathJSON = resolve(here, 'package.json');
+const pkgs = Object.keys(JSON.parse(readFileSync(pathJSON, 'utf8')).dependencies ?? {});
+
+if (!pkgs.length) {
+  console.error(`Failed to validate> No dependencies found in ${pathJSON}`);
+  process.exit(1);
+}
 
 const BROWSER_GLOBAL =
   /\b(window|document|navigator|self|HTMLElement|customElements|requestAnimationFrame)\b is not defined/;

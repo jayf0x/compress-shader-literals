@@ -2,12 +2,18 @@
   "name": "compress-shader-literals-e2e",
   "private": true,
   "type": "module",
+  "scripts": {
+    "tests:next": "bun install && node experimental/index.js"
+  },
   "dependencies": {
-    "three": "^0.184.0",
+    "@jayf0x/fluidity-js": "^1.0.4",
     "@shaderfrog/glsl-parser": "^0.2.4",
     "curtainsjs": "^8.1.6",
     "ogl": "^1.0.11",
     "shader-park-core": "^0.2.8",
-    "@jayf0x/fluidity-js": "^1.0.4"
+    "three": "^0.184.0"
+  },
+  "devDependencies": {
+    "lygia": "^1.4.1"
   }
 }
