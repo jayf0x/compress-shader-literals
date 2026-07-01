@@ -1,7 +1,15 @@
 import { parse } from '@babel/parser';
 import _traverse from '@babel/traverse';
 
-import { DEFAULT_TAGS, tagCommentRe } from './defaults.js';
+import {
+  DEFAULT_TAGS,
+  RE_BLANK_LINES,
+  RE_BLOCK_COMMENT,
+  RE_CRLF,
+  RE_INLINE_WS,
+  RE_LINE_COMMENT,
+  tagCommentRe,
+} from './defaults.js';
 
 const traverse = _traverse.default || _traverse;
 
@@ -74,9 +82,9 @@ export const extractShaderLiterals = (code, tags = DEFAULT_TAGS) => {
 
 export const minifyShader = (src) =>
   src
-    .replace(/\r\n/g, '\n')
-    .replace(/\/\*[\s\S]*?\*\//g, '')
-    .replace(/\/\/.*$/gm, '')
-    .replace(/[ \t]+/g, ' ')
-    .replace(/\n{2,}/g, '\n')
+    .replace(RE_CRLF, '\n')
+    .replace(RE_BLOCK_COMMENT, '')
+    .replace(RE_LINE_COMMENT, '')
+    .replace(RE_INLINE_WS, ' ')
+    .replace(RE_BLANK_LINES, '\n')
     .trim();

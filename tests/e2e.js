@@ -6,31 +6,18 @@
  *
  * Add more packages to PACKAGES — each one `bun add`ed here — to grow the stats.
  */
-import { parse } from '@babel/parser';
-import _traverse from '@babel/traverse';
-import glsl from '@shaderfrog/glsl-parser';
 import { execFileSync } from 'node:child_process';
-import { existsSync, readFileSync, readdirSync, statSync, writeFileSync } from 'node:fs';
-import { dirname, join, resolve } from 'node:path';
+import { existsSync, readFileSync, writeFileSync } from 'node:fs';
+import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import { minifyShader } from '../src/core.js';
+import { jsFiles, packages, shadersInCode, validateGlsl } from './utils.js';
 
-const traverse = _traverse.default || _traverse;
 const here = dirname(fileURLToPath(import.meta.url));
 
 // Validate the benchmarked libraries actually load before trusting their stats.
 execFileSync('node', [resolve(here, 'validate.js')], { stdio: 'inherit' });
-
-// Packages to benchmark — `bun add` each in tests/ first.
-const PACKAGES = ['three', '@jayf0x/fluidity-js', 'ogl', 'shader-park-core', 'curtainsjs'];
-
-// A template literal is "a shader" if its text looks like GLSL/WGSL.
-const SHADER_SIGNAL = /\b(gl_FragColor|gl_Position|void\s+main|precision\s+(highp|mediump|lowp)|fn\s+main)\b/;
-
-// WGSL has no GLSL parser to check it against — detect it so we don't feed it to
-// the GLSL parser and report it as "not parse-validated" instead of a failure.
-const isWGSL = (src) => /@vertex|@fragment|@group|var<|@compute/.test(src) && !/void\s+main/.test(src);
 
 // Proof the minifier preserves meaning: every GLSL shader that parses before
 // minify must still parse after. A shader that breaks is a real bug → fatal.
@@ -38,52 +25,21 @@ const isWGSL = (src) => /@vertex|@fragment|@group|var<|@compute/.test(src) && !/
 // #include context) are out of scope — counted as skipped, not validated.
 const validation = { glslOk: 0, broken: 0, wgsl: 0, fragments: 0, broke: [] };
 function validate(pkg, before, after) {
-  if (isWGSL(before)) {
-    validation.wgsl++;
-    return;
+  switch (validateGlsl(before, after)) {
+    case 'ok':
+      validation.glslOk++;
+      break;
+    case 'broken':
+      validation.broken++;
+      validation.broke.push(pkg);
+      break;
+    case 'wgsl':
+      validation.wgsl++;
+      break;
+    case 'fragment':
+      validation.fragments++;
+      break;
   }
-  try {
-    glsl.parser.parse(before, { quiet: true });
-  } catch {
-    validation.fragments++;
-    return;
-  }
-  try {
-    glsl.parser.parse(after, { quiet: true });
-    validation.glslOk++;
-  } catch (err) {
-    validation.broken++;
-    validation.broke.push(`${pkg}: ${err.message.split('\n')[0]}`);
-  }
-}
-
-// ponytail: regex file walk, plain template-literal heuristic. Good enough for a
-// stats demo; tighten if a package ships shaders we systematically miss.
-function jsFiles(dir, out = []) {
-  for (const name of readdirSync(dir)) {
-    if (name === 'node_modules') continue;
-    const full = join(dir, name);
-    if (statSync(full).isDirectory()) jsFiles(full, out);
-    else if (/\.(js|mjs|cjs)$/.test(name)) out.push(full);
-  }
-  return out;
-}
-
-function shadersIn(code) {
-  const found = [];
-  let ast;
-  try {
-    ast = parse(code, { sourceType: 'unambiguous', plugins: ['typescript', 'jsx'] });
-  } catch {
-    return found;
-  }
-  traverse(ast, {
-    TemplateLiteral(path) {
-      const raw = path.node.quasis.map((q) => q.value.raw).join('');
-      if (SHADER_SIGNAL.test(raw)) found.push(raw);
-    },
-  });
-  return found;
 }
 
 function benchPackage(pkg) {
@@ -93,7 +49,7 @@ function benchPackage(pkg) {
   let after = 0;
   let count = 0;
   for (const file of jsFiles(root)) {
-    for (const shader of shadersIn(readFileSync(file, 'utf8'))) {
+    for (const shader of shadersInCode(readFileSync(file, 'utf8'))) {
       const min = minifyShader(shader);
       before += Buffer.byteLength(shader);
       after += Buffer.byteLength(min);
@@ -104,7 +60,7 @@ function benchPackage(pkg) {
   return count ? { pkg, count, before, after } : null;
 }
 
-const rows = PACKAGES.map(benchPackage).filter(Boolean);
+const rows = packages().map(benchPackage).filter(Boolean);
 if (rows.length === 0) {
   console.error('No shaders found. Did you `bun add` the packages in tests/?');
   process.exit(1);

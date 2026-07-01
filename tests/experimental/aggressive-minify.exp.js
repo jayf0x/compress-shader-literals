@@ -13,15 +13,17 @@
  *
  * Exported for tests/experimental/index.js to measure + validate.
  */
+import { RE_BLOCK_COMMENT, RE_CRLF, RE_INLINE_WS, RE_LINE_COMMENT } from '../../src/defaults.js';
+
 export const name = 'aggressive-whitespace';
 
 export const transform = (src) => {
   const lines = src
-    .replace(/\r\n/g, '\n')
-    .replace(/\/\*[\s\S]*?\*\//g, '') // block comments
-    .replace(/\/\/.*$/gm, '') // line comments
+    .replace(RE_CRLF, '\n')
+    .replace(RE_BLOCK_COMMENT, '')
+    .replace(RE_LINE_COMMENT, '')
     .split('\n')
-    .map((l) => l.replace(/[ \t]+/g, ' ').trim())
+    .map((l) => l.replace(RE_INLINE_WS, ' ').trim())
     .filter(Boolean);
 
   let out = '';

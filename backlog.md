@@ -8,7 +8,7 @@ files: `src/plugin.js` (filter + transform), `src/defaults.js` (`DEFAULT_INCLUDE
 
 task: add an opt-in `scan: 'loose'` option that finds tagged and comment-prefixed shader literals by regex across any file, bypassing the whole-file Babel parse. Babel is JS/TS-only, so today `.vue` / `.svelte` / `.astro` / `.glsl` files yield nothing even if included. Keep the current Babel path (`scan: 'ast'`) as the default.
 
-goal: minify shaders living in SFCs and non-JS containers without corrupting non-shader files. Gate every loose match by a content signal before stripping (reuse `SHADER_SIGNAL` in `tests/e2e.js`) — the regex finds candidates, the signal confirms they're shaders.
+goal: minify shaders living in SFCs and non-JS containers without corrupting non-shader files. Gate every loose match by a content signal before stripping (reuse `SHADER_SIGNAL` in `tests/utils.js`) — the regex finds candidates, the signal confirms they're shaders.
 
 ## Extend shader validation
 
@@ -31,6 +31,7 @@ goal: measurably smaller output (raw, and a little post-gzip) with zero regressi
 files: `src/core.js` (`minifyShader` — comment + whitespace regexes), `src/defaults.js` (`tagCommentRe`), `tests/experimental/` (candidate + gate)
 
 task: needs research first. The minifier is a stack of regexes (`/\/\*...\*\//`, `/\/\/.*$/`, whitespace collapse) — brittle and hard to reason about. Evaluate replacing them:
+
 - **Comment stripping:** `extract-comments` / `strip-comments` are options, but they're tuned for JS (string- and regex-literal-aware) — GLSL has no string literals, so the extra machinery buys little and adds a dependency. Confirm whether they even improve correctness over the current regex before adopting.
 - **The real regex debt is whitespace/newline handling**, which no comment library touches. Going properly regex-free there means tokenizing GLSL — `@shaderfrog/glsl-parser` is already a `tests/`-only dep and could lex → re-emit. That's the heavier, more correct path; weigh it against "stay tiny and boring" (AGENTS.md) and the fact that a tokenizer is WGSL-blind.
 

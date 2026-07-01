@@ -15,7 +15,7 @@ import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import { minifyShader } from '../../src/core.js';
-import { collectShaders, measure, validateGlsl } from './utils.js';
+import { collectShaders, measure, validateGlsl } from '../utils.js';
 
 const here = dirname(fileURLToPath(import.meta.url));
 
@@ -72,7 +72,9 @@ if (results.length > 1) {
   for (const r of results.slice(1)) {
     const dRaw = base.rawAfter - r.m.rawAfter;
     const dBr = base.brAfter - r.m.brAfter;
-    console.log(`  ${r.name.padEnd(26)} raw ${dRaw > 0 ? '-' : '+'}${Math.abs(dRaw)} B  brotli ${dBr > 0 ? '-' : '+'}${Math.abs(dBr)} B`);
+    console.log(
+      `  ${r.name.padEnd(26)} raw ${dRaw > 0 ? '-' : '+'}${Math.abs(dRaw)} B  brotli ${dBr > 0 ? '-' : '+'}${Math.abs(dBr)} B`
+    );
   }
 }
 
