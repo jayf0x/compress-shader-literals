@@ -6,6 +6,8 @@ A universal bundler plugin (built on [unplugin](https://github.com/unjs/unplugin
 
 Intent: stay tiny and boring. This is a one-job tool. Resist scope creep.
 
+**Working with the maintainer:** see [about-user.md](about-user.md) — when to ask vs. act, and how this maintainer's fast-iteration style wants to be handled.
+
 ## Layout
 
 | Path                     | Role                                                                                                                                    |

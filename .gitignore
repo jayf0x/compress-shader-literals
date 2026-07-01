@@ -5,3 +5,4 @@ build
 tests/*.dump.txt
 
 dev
+about-user.md
