@@ -3,7 +3,7 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "tests:next": "bun install && node experimental/index.js"
+    "tests:next": "bun install && node experimental.js"
   },
   "dependencies": {
     "@jayf0x/fluidity-js": "^1.0.4",

@@ -64,7 +64,7 @@
     "test:validate": "cd tests && bun install && node validate.js",
     "test:e2e": "cd tests && bun install && node e2e.js",
     "test:dump": "cd tests && bun install && node dump-chunks.js",
-    "tests:next": "cd tests && bun install && node experimental/index.js",
+    "tests:next": "cd tests && bun install && node experimental.js",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "npm:deploy": "bash ./scripts/publish-npm.sh",
