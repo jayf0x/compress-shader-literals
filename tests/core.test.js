@@ -58,8 +58,20 @@ test('extractShaderLiterals skips interpolated comment-prefixed templates', () =
   expect(extractShaderLiterals(code)).toHaveLength(0);
 });
 
-test('minifyShader normalizes CRLF line endings', () => {
+test('minifyShader normalizes CRLF and joins statements onto one line', () => {
   const out = minifyShader('void main() {}\r\n\r\nvoid foo() {}');
   expect(out).not.toContain('\r');
-  expect(out).toBe('void main() {}\nvoid foo() {}');
+  expect(out).toBe('void main() {} void foo() {}');
+});
+
+test('minifyShader keeps newlines around # preprocessor directives', () => {
+  const out = minifyShader('precision highp float;\n#define K 2\nint b = K;');
+  expect(out).toBe('precision highp float;\n#define K 2\nint b = K;');
+});
+
+test('minifyShader preserves \\ line-continuations (multiline #define)', () => {
+  const out = minifyShader('#define SUM(a,b) \\\n  ((a) + \\\n   (b))\nvoid main(){}');
+  // Every backslash must stay immediately before a newline, or the macro breaks.
+  expect(out).not.toMatch(/\\(?!\n)/);
+  expect(out).toBe('#define SUM(a,b) \\\n((a) + \\\n(b))\nvoid main(){}');
 });

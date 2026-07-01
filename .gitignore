@@ -2,4 +2,6 @@ node_modules
 dist
 build
 .DS_Store
-tests/chunks.dump.txt
+tests/*.dump.txt
+
+dev

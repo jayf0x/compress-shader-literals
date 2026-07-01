@@ -3,7 +3,6 @@ import _traverse from '@babel/traverse';
 
 import {
   DEFAULT_TAGS,
-  RE_BLANK_LINES,
   RE_BLOCK_COMMENT,
   RE_CRLF,
   RE_INLINE_WS,
@@ -80,11 +79,30 @@ export const extractShaderLiterals = (code, tags = DEFAULT_TAGS) => {
   return literals;
 };
 
-export const minifyShader = (src) =>
-  src
+// Whitespace/comment-only minify: strip comments, collapse inline whitespace,
+// drop blank lines, then join statements onto one line. GLSL only needs real
+// newlines around `#` preprocessor directives and `\` line-continuations
+// (newline-sensitive); everything else is `;`-terminated, so joining is safe.
+// No identifier renaming / operator-space removal — that's heavyweight-minifier
+// territory that risks breaking shaders; we stay the light, compatible layer.
+export const minifyShader = (src) => {
+  const lines = src
     .replace(RE_CRLF, '\n')
     .replace(RE_BLOCK_COMMENT, '')
     .replace(RE_LINE_COMMENT, '')
-    .replace(RE_INLINE_WS, ' ')
-    .replace(RE_BLANK_LINES, '\n')
-    .trim();
+    .split('\n')
+    .map((l) => l.replace(RE_INLINE_WS, ' ').trim())
+    .filter(Boolean);
+
+  let out = '';
+  let cont = false; // previous line ended with a `\` continuation
+  for (const line of lines) {
+    if (line.startsWith('#') || cont) {
+      out += (out && !out.endsWith('\n') ? '\n' : '') + line + '\n';
+    } else {
+      out += out === '' || out.endsWith('\n') ? line : ' ' + line;
+    }
+    cont = line.endsWith('\\');
+  }
+  return out.trim();
+};

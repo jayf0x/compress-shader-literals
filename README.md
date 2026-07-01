@@ -15,6 +15,8 @@ A build-time minifier that strips comments and whitespace from GLSL & WGSL shade
 
 ## Install
 
+[![NPM](https://nodei.co/npm/compress-shader-literals.png)](https://www.npmjs.com/package/compress-shader-literals)
+
 ```sh
 bun add -d compress-shader-literals
 # or: npm i -D compress-shader-literals

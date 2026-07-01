@@ -13,7 +13,6 @@ import { fileURLToPath } from 'node:url';
 import { brotliCompressSync, gzipSync } from 'node:zlib';
 
 import { minifyShader } from '../src/core.js';
-import { RE_BLOCK_COMMENT, RE_CRLF, RE_INLINE_WS, RE_LINE_COMMENT } from '../src/defaults.js';
 
 const traverse = _traverse.default || _traverse;
 const here = dirname(fileURLToPath(import.meta.url));
@@ -26,38 +25,7 @@ const here = dirname(fileURLToPath(import.meta.url));
  * (see tests/experimental.js). Add a method here and it appears everywhere the
  * comparison runs — the experimental suite and the per-chunk dump.
  */
-export const METHODS = [
-  ['minify (shipped)', minifyShader],
-  ['aggressive', aggressiveMinify],
-];
-
-/**
- * Candidate: "compress as much as possible, where it's still useful."
- * Whitespace/comment-only — no identifier renaming, no operator-space removal
- * (that's heavyweight-minifier territory and risks breaking shaders). On top of
- * `minifyShader` it trims each line, drops surviving blank lines, and joins
- * statements onto one line — keeping real newlines ONLY around `#` preprocessor
- * directives, which are newline-sensitive in GLSL.
- */
-export function aggressiveMinify(src) {
-  const lines = src
-    .replace(RE_CRLF, '\n')
-    .replace(RE_BLOCK_COMMENT, '')
-    .replace(RE_LINE_COMMENT, '')
-    .split('\n')
-    .map((l) => l.replace(RE_INLINE_WS, ' ').trim())
-    .filter(Boolean);
-
-  let out = '';
-  for (const line of lines) {
-    if (line.startsWith('#')) {
-      out += (out && !out.endsWith('\n') ? '\n' : '') + line + '\n';
-    } else {
-      out += out === '' || out.endsWith('\n') ? line : ' ' + line;
-    }
-  }
-  return out.trim();
-}
+export const METHODS = [['minify (shipped)', minifyShader]];
 
 // --- Patterns ----------------------------------------------------------------
 
