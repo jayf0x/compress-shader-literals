@@ -71,6 +71,18 @@ export const JS_FILE = /\.(js|mjs|cjs)$/;
 /** True when `src` looks like WGSL (has WGSL markers and no GLSL `main`). */
 export const isWGSL = (src) => WGSL_SIGNAL.test(src) && !/void\s+main/.test(src);
 
+/**
+ * A backslash that is not immediately followed by a newline. In GLSL a `\` is
+ * only ever a line-continuation (multiline `#define`/directive), which is legal
+ * *only* right before a newline; WGSL has no legal `\` at all. So this pattern
+ * is a whitespace-corruption smoke alarm that works even where no parser can
+ * check the shader — glslify fragments and WGSL both land in the parser's blind
+ * spots, and this is what catches a joined-away continuation there.
+ */
+export const RE_BROKEN_CONTINUATION = /\\(?!\n)/;
+/** A whitespace/comment-only transform must never break a line-continuation. */
+export const continuationOk = (src) => !RE_BROKEN_CONTINUATION.test(src);
+
 // --- Corpus ------------------------------------------------------------------
 
 /**
@@ -138,8 +150,14 @@ export function collectShaders() {
  *   'broken'   — parsed before, not after (a real bug)
  *   'wgsl'     — WGSL, no GLSL parser to check it against (skipped)
  *   'fragment' — didn't parse even before (glslify chunk, out of scope)
+ *
+ * The parser only guards standalone GLSL. Before delegating to it, catch the
+ * corruption it *can't* see: a whitespace-only transform that breaks a
+ * line-continuation is broken no matter the shader dialect — this is the only
+ * check that reaches WGSL and glslify fragments.
  */
 export function validateGlsl(before, after) {
+  if (continuationOk(before) && !continuationOk(after)) return 'broken';
   if (isWGSL(before)) return 'wgsl';
   try {
     glsl.parser.parse(before, { quiet: true });
