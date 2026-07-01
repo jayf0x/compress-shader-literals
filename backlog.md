@@ -51,13 +51,13 @@ task: needs research first. Build clean stats comparing this tool to other minif
 
 goal: honest answer to "is this still relevant once Terser has run / when shaders are already optimized?" `laurentlb/shader-minifier` is the heavyweight reference (renaming + dead-code elimination); this tool is effectively the whitespace/comment subset of that, as a bundler plugin. Quantify the real-world relevance instead of asserting it.
 
-## Parallelize `e2e.js` package loading
+## Parallelize `e2e.js` package scanning
 
-files: `tests/e2e.js`, `tests/validate.js`, `tests/utils.js` (`packages`)
+files: `tests/e2e.js` (`benchPackage`), `tests/utils.js` (`jsFiles`, `shadersInCode`)
 
-why: the ~90s+ runtime of `bun run test:e2e` isn't the minify/brotli work — it's `validate.js` synchronously `require`ing all 20 benchmarked packages one after another (some, like `cesium`/`@babylonjs/core`/`playcanvas`, are heavy). Pre-existing cost, not caused by any recent change to the stats table.
+why: the ~90s+ runtime of `bun run test:e2e` is NOT `validate.js` (measured standalone: ~1.5s for all 20 packages' `import()`). It's `benchPackage`'s `jsFiles` + `shadersInCode` — walking every file a package ships and running a full Babel `parse`/`traverse` over each one to find shader literals. Measured per-package: `cesium` ~16s, `playcanvas` ~10s, `three` ~4.8s, `pixi.js` ~4.5s, `@babylonjs/core` ~4.3s — big installed trees, not big shader counts. Pre-existing cost, not caused by any recent change to the stats table.
 
-task: each package's validate-and-bench step is independent — no shared state, output is just `{ pkg, count, before, after }` (+ optional brotli fields). Fan the per-package work out across worker processes (`node:child_process` or `node:worker_threads`), collect results, then do the existing sort/table/write in the parent. Keep today's synchronous single-process path as a fallback if parallelizing turns out not worth the complexity for a `tests/`-only script.
+task: each package's scan is independent — no shared state, output is just `{ pkg, count, before, after }`. Fan `benchPackage` calls out across worker processes/threads (`node:child_process` or `node:worker_threads`), collect results, then do the existing sort/brotli-sample/table/write in the parent. Keep today's synchronous single-process path as a fallback if parallelizing isn't worth the complexity for a `tests/`-only script.
 
 goal: get real wall-clock time down without touching what's measured or reported.
 
