@@ -26,6 +26,16 @@ task: `minifyShader` today leaves easy bytes on the table — a leading space pe
 
 goal: measurably smaller output (raw, and a little post-gzip) with zero regressions on the GLSL validity gate. Prototype and prove it in `tests/experimental` (run `bun run tests:next`) before touching `src/core.js`; the win is mostly raw bytes, so it matters most for un-gzipped delivery and inline/parsed-at-runtime shader strings.
 
+## Replace hand-rolled regexes with a parser/library
+
+files: `src/core.js` (`minifyShader` — comment + whitespace regexes), `src/defaults.js` (`tagCommentRe`), `tests/experimental/` (candidate + gate)
+
+task: needs research first. The minifier is a stack of regexes (`/\/\*...\*\//`, `/\/\/.*$/`, whitespace collapse) — brittle and hard to reason about. Evaluate replacing them:
+- **Comment stripping:** `extract-comments` / `strip-comments` are options, but they're tuned for JS (string- and regex-literal-aware) — GLSL has no string literals, so the extra machinery buys little and adds a dependency. Confirm whether they even improve correctness over the current regex before adopting.
+- **The real regex debt is whitespace/newline handling**, which no comment library touches. Going properly regex-free there means tokenizing GLSL — `@shaderfrog/glsl-parser` is already a `tests/`-only dep and could lex → re-emit. That's the heavier, more correct path; weigh it against "stay tiny and boring" (AGENTS.md) and the fact that a tokenizer is WGSL-blind.
+
+goal: decide, with a prototype in `tests/experimental` measured against the current regex output, whether dropping regexes is a net win (fewer edge-case bugs) or just a heavier dependency for the same result. Don't add a parser to `src` runtime deps unless it demonstrably prevents a real corruption the regexes miss.
+
 ## Comparison / relevance stats vs other minifiers
 
 files: `tests/e2e.js`, `docs/stats.md`, README stats block, plus this session's research notes (see `laurentlb/shader-minifier`, https://www.ctrl-alt-test.fr/glsl-minifier/)
