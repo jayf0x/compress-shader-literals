@@ -1,7 +1,15 @@
 import { parse } from '@babel/parser';
 import _traverse from '@babel/traverse';
 
-import { DEFAULT_TAGS, RE_BLOCK_COMMENT, RE_CRLF, RE_INLINE_WS, RE_LINE_COMMENT, tagCommentRe } from './defaults.js';
+import {
+  DEFAULT_TAGS,
+  RE_BLOCK_COMMENT,
+  RE_CRLF,
+  RE_DELIM_WS,
+  RE_INLINE_WS,
+  RE_LINE_COMMENT,
+  tagCommentRe,
+} from './defaults.js';
 
 const traverse = _traverse.default || _traverse;
 
@@ -97,5 +105,19 @@ export const minifyShader = (src) => {
     }
     cont = line.endsWith('\\');
   }
+
+  // Second pass: strip whitespace hugging delimiters. Statements are now joined
+  // onto single lines, so within a line `\s` is only spaces; `#`/continuation
+  // lines (where a space can be significant) are left untouched.
+  cont = false;
+  out = out
+    .split('\n')
+    .map((line) => {
+      const trimmed = line.startsWith('#') || cont ? line : line.replace(RE_DELIM_WS, '$1');
+      cont = line.endsWith('\\');
+      return trimmed;
+    })
+    .join('\n');
+
   return out.trim();
 };

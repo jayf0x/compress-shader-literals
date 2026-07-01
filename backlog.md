@@ -16,10 +16,9 @@ test target: `lygia` is a good showcase — it ships raw `.glsl`/`.wgsl`/`.wesl`
 
 files: `tests/e2e.js` + `tests/experimental.js` (GLSL gate via `@shaderfrog/glsl-parser`), `tests/utils.js` (`validateGlsl`), `src/plugin.js`
 
-why: the gate parse-checks GLSL only. Roughly a third of the corpus (WGSL + glslify fragments) is skipped, not verified — and `minifyShader` runs on it. Three ways to shrink that gap:
+why: the parser gate covers GLSL only; roughly a third of the corpus (WGSL + glslify fragments) can't be parse-checked. `validateGlsl` already applies two parser-free invariants there (`continuationOk`, `bracketsOk`) that catch gross corruption in any dialect — but those prove absence of bracket/continuation damage, not full validity. Two ways left to close the gap:
 
-- **(a) Wire a real WGSL parser** (`naga` via `naga-wasm`, or similar) into `validateGlsl` so WGSL gets the same before/after parse guarantee as GLSL. Biggest single coverage win — WGSL is ~a fifth of the corpus.
-- **(b) Structural invariants for glslify fragments.** They don't parse standalone even _before_ minify (missing `#include` context), so no parser can gate them. Add parser-free before==after invariants (balanced braces/parens, `;` count preserved) on top of the existing `continuationOk` check.
+- **(a) Wire a real WGSL parser** (`naga` via `naga-wasm`, or similar) into `validateGlsl` so WGSL gets the same before/after parse guarantee as GLSL. Biggest remaining coverage win — WGSL is ~a fifth of the corpus and only structurally checked today.
 - **(c) Opt-in `validate: true` in the plugin.** Re-parse each shader the plugin touches at build time and warn when one stops parsing, so user shaders outside the benchmark corpus get the same guarantee. Reuse `validateGlsl`.
 
 ## Replace hand-rolled regexes with a parser/library

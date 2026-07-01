@@ -85,20 +85,32 @@ minifyShader('// comment\nvoid  main() {}'); // → 'void main() {}'
 Real shaders shipped by popular libraries, run through the built-in minifier:
 
 <!-- STATS:START -->
+| Package | Shaders | Before | After | Saved |
+| ------- | ------: | -----: | ----: | ----: |
+| `vtk.js` | 142 | 276,617 B | 159,634 B | **42.3%** |
+| `three-stdlib` | 370 | 429,350 B | 272,486 B | **36.5%** |
+| `curtainsjs` | 7 | 3,406 B | 2,352 B | **30.9%** |
+| `hydra-synth` | 15 | 3,852 B | 2,675 B | **30.6%** |
+| `cesium` | 546 | 951,897 B | 664,581 B | **30.2%** |
+| `troika-three-utils` | 4 | 168 B | 120 B | **28.6%** |
+| `pixi.js` | 162 | 75,768 B | 56,152 B | **25.9%** |
+| `shader-park-core` | 18 | 10,794 B | 8,007 B | **25.8%** |
+| `@luma.gl/shadertools` | 24 | 149,192 B | 111,095 B | **25.5%** |
+| `three` | 281 | 240,906 B | 185,520 B | **23.0%** |
+| `playcanvas` | 856 | 1,297,844 B | 1,039,365 B | **19.9%** |
+| `ogl` | 22 | 6,109 B | 4,925 B | **19.4%** |
+| `deck.gl` | 132 | 242,113 B | 198,706 B | **17.9%** |
+| `@paper-design/shaders` | 30 | 142,466 B | 122,036 B | **14.3%** |
+| `@deck.gl/layers` | 104 | 223,902 B | 195,827 B | **12.5%** |
+| `@deck.gl/core` | 40 | 17,746 B | 15,738 B | **11.3%** |
+| `@deck.gl/aggregation-layers` | 56 | 43,713 B | 39,094 B | **10.6%** |
+| `@luma.gl/engine` | 29 | 11,357 B | 10,384 B | **8.6%** |
+| `@babylonjs/core` | 349 | 669,740 B | 661,013 B | **1.3%** |
+| `mapbox-gl` | 2 | 46 B | 46 B | **0.0%** |
+| `postprocessing` | 136 | 179,705 B | 179,705 B | **0.0%** |
+| **Total** | 3325 | 4,976,691 B | 3,929,461 B | **21.0%** |
 
-| Package                 | Shaders |      Before |       After |     Saved |
-| ----------------------- | ------: | ----------: | ----------: | --------: |
-| `curtainsjs`            |       7 |     3,406 B |     2,485 B | **27.0%** |
-| `pixi.js`               |     162 |    75,768 B |    59,432 B | **21.6%** |
-| `shader-park-core`      |      18 |    10,794 B |     8,721 B | **19.2%** |
-| `three`                 |     281 |   240,772 B |   197,399 B | **18.0%** |
-| `ogl`                   |      22 |     6,109 B |     5,182 B | **15.2%** |
-| `@paper-design/shaders` |      30 |   142,466 B |   129,723 B |  **8.9%** |
-| `@babylonjs/core`       |     349 |   669,740 B |   664,617 B |  **0.8%** |
-| **Total**               |     869 | 1,149,055 B | 1,067,559 B |  **7.1%** |
-
-_869 shaders · 558/558 parseable GLSL verified valid after minify · [how this is measured](docs/stats.md) · 2026-07-01_
-
+_3325 shaders · 2350/2350 parseable GLSL verified valid after minify · [how this is measured](docs/stats.md) · 2026-07-01_
 <!-- STATS:END -->
 
 ## How it works

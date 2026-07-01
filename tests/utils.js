@@ -13,6 +13,7 @@ import { fileURLToPath } from 'node:url';
 import { brotliCompressSync, gzipSync } from 'node:zlib';
 
 import { minifyShader } from '../src/core.js';
+import { RE_BLOCK_COMMENT, RE_CRLF, RE_LINE_COMMENT } from '../src/defaults.js';
 
 const traverse = _traverse.default || _traverse;
 const here = dirname(fileURLToPath(import.meta.url));
@@ -50,6 +51,29 @@ export const isWGSL = (src) => WGSL_SIGNAL.test(src) && !/void\s+main/.test(src)
 export const RE_BROKEN_CONTINUATION = /\\(?!\n)/;
 /** A whitespace/comment-only transform must never break a line-continuation. */
 export const continuationOk = (src) => !RE_BROKEN_CONTINUATION.test(src);
+
+/**
+ * Structural invariant that needs no parser, so it reaches the WGSL + glslify
+ * fragments the GLSL parser can't (~a third of the corpus). The minifier only
+ * touches whitespace and comments — it never adds or removes a bracket — so the
+ * bracket/paren/brace counts of the comment-stripped source must equal those of
+ * the output. Comments are stripped from `before` first (their inner brackets go
+ * away legitimately); partial fragments are fine because this compares before↔
+ * after, not "is balanced". Any mismatch is real corruption.
+ */
+export function bracketsOk(before, after) {
+  const clean = before.replace(RE_CRLF, '\n').replace(RE_BLOCK_COMMENT, '').replace(RE_LINE_COMMENT, '');
+  const count = (s) => {
+    const c = [0, 0, 0, 0, 0, 0];
+    const k = '()[]{}';
+    for (const ch of s) {
+      const i = k.indexOf(ch);
+      if (i >= 0) c[i]++;
+    }
+    return c.join(',');
+  };
+  return count(clean) === count(after);
+}
 
 // --- Corpus ------------------------------------------------------------------
 
@@ -120,12 +144,13 @@ export function collectShaders() {
  *   'fragment' — didn't parse even before (glslify chunk, out of scope)
  *
  * The parser only guards standalone GLSL. Before delegating to it, catch the
- * corruption it *can't* see: a whitespace-only transform that breaks a
- * line-continuation is broken no matter the shader dialect — this is the only
- * check that reaches WGSL and glslify fragments.
+ * corruption it *can't* see with parser-free invariants (broken line-continuation,
+ * changed bracket balance) — these are the only checks that reach WGSL and glslify
+ * fragments, no matter the dialect.
  */
 export function validateGlsl(before, after) {
   if (continuationOk(before) && !continuationOk(after)) return 'broken';
+  if (!bracketsOk(before, after)) return 'broken';
   if (isWGSL(before)) return 'wgsl';
   try {
     glsl.parser.parse(before, { quiet: true });

@@ -3,43 +3,6 @@
   "version": "1.2.0",
   "type": "module",
   "description": "Minify GLSL/WGSL shaders in your JS/TS at build time. Drop-in plugin for Vite, Rollup, webpack, esbuild, Rspack, Rolldown & Farm.",
-  "keywords": [
-    "shader",
-    "glsl",
-    "wgsl",
-    "minify",
-    "minification",
-    "compress",
-    "compression",
-    "bundle-size",
-    "optimization",
-    "code-size",
-    "typescript",
-    "webgl",
-    "webgpu",
-    "three",
-    "threejs",
-    "ogl",
-    "react-three-fiber",
-    "shader-park",
-    "curtainsjs",
-    "shadertoy",
-    "vite-plugin",
-    "rollup-plugin",
-    "webpack-plugin",
-    "esbuild-plugin",
-    "unplugin"
-  ],
-  "license": "MIT",
-  "author": "jayF0x",
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/jayf0x/compress-shader-literals.git"
-  },
-  "homepage": "https://github.com/jayf0x/compress-shader-literals#readme",
-  "bugs": {
-    "url": "https://github.com/jayf0x/compress-shader-literals/issues"
-  },
   "main": "./dist/index.cjs",
   "module": "./dist/index.js",
   "types": "./dist/index.d.ts",
@@ -95,5 +58,42 @@
       "path": "dist/index.js",
       "limit": "1.7 kB"
     }
+  ],
+  "license": "MIT",
+  "author": "jayF0x",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/jayf0x/compress-shader-literals.git"
+  },
+  "homepage": "https://github.com/jayf0x/compress-shader-literals#readme",
+  "bugs": {
+    "url": "https://github.com/jayf0x/compress-shader-literals/issues"
+  },
+  "keywords": [
+    "shader",
+    "glsl",
+    "wgsl",
+    "minify",
+    "minification",
+    "compress",
+    "compression",
+    "bundle-size",
+    "optimization",
+    "code-size",
+    "typescript",
+    "webgl",
+    "webgpu",
+    "three",
+    "threejs",
+    "ogl",
+    "react-three-fiber",
+    "shader-park",
+    "curtainsjs",
+    "shadertoy",
+    "vite-plugin",
+    "rollup-plugin",
+    "webpack-plugin",
+    "esbuild-plugin",
+    "unplugin"
   ]
 }

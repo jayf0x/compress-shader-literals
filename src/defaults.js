@@ -31,3 +31,12 @@ export const RE_BLOCK_COMMENT = /\/\*[\s\S]*?\*\//g;
 export const RE_LINE_COMMENT = /\/\/.*$/gm;
 /** A run of spaces/tabs (collapse to one space — never touches newlines). */
 export const RE_INLINE_WS = /[ \t]+/g;
+/**
+ * Whitespace hugging a delimiter (`( ) { } ; ,`) — strip it (`$1`). These chars
+ * can't be part of an identifier, so removing adjacent space never merges two
+ * tokens. `=` is deliberately NOT here: it's GLSL-safe but would weld a WGSL
+ * generic-close onto assignment (`vec2<f32> = a` → `>=`). Only ever applied to
+ * statement lines — never preprocessor (`#`) / `\`-continued lines, where a space
+ * before `(` is significant (`#define FOO (x)` ≠ `#define FOO(x)`).
+ */
+export const RE_DELIM_WS = /\s*([(){};,])\s*/g;

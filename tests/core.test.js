@@ -61,7 +61,18 @@ test('extractShaderLiterals skips interpolated comment-prefixed templates', () =
 test('minifyShader normalizes CRLF and joins statements onto one line', () => {
   const out = minifyShader('void main() {}\r\n\r\nvoid foo() {}');
   expect(out).not.toContain('\r');
-  expect(out).toBe('void main() {} void foo() {}');
+  expect(out).toBe('void main(){}void foo(){}');
+});
+
+test('minifyShader strips whitespace around delimiters but not operators', () => {
+  const out = minifyShader('void main ( ) { float x = a + b ; }');
+  // ( ) { } ; tighten; the `=` and `+` operators keep their spaces.
+  expect(out).toBe('void main(){float x = a + b;}');
+});
+
+test('minifyShader leaves WGSL generics intact (no >= welding)', () => {
+  // `=` is never trimmed, so the generic-close `>` can't fuse onto assignment.
+  expect(minifyShader('var x: vec2<f32> = a;')).toBe('var x: vec2<f32> = a;');
 });
 
 test('minifyShader keeps newlines around # preprocessor directives', () => {
