@@ -105,14 +105,21 @@ const validityNote = `${v.glslOk}/${v.glslOk + v.broken} parseable GLSL verified
 if (process.argv.includes('--write')) {
   const readme = resolve(here, '..', 'README.md');
   const md = readFileSync(readme, 'utf8');
-  const date = new Date().toISOString().slice(0, 10);
-  const caption = `_${tCount} shaders · ${validityNote} · [how this is measured](docs/stats.md) · ${date}_`;
-  const block = `<!-- STATS:START -->\n${table}\n\n${caption}\n<!-- STATS:END -->`;
-  const next = md.replace(/<!-- STATS:START -->[\s\S]*?<!-- STATS:END -->/, block);
-  if (next === md) {
+  const markers = /<!-- STATS:START -->[\s\S]*?<!-- STATS:END -->/;
+  // Only a genuinely missing marker block is fatal — identical content just means
+  // nothing changed since the last run, which is fine (idempotent re-run).
+  if (!markers.test(md)) {
     console.error('No <!-- STATS:START/END --> markers found in README.');
     process.exit(1);
   }
-  writeFileSync(readme, next);
-  console.log('✓ README stats updated');
+  const date = new Date().toISOString().slice(0, 10);
+  const caption = `_${tCount} shaders · ${validityNote} · [how this is measured](docs/stats.md) · ${date}_`;
+  const block = `<!-- STATS:START -->\n${table}\n\n${caption}\n<!-- STATS:END -->`;
+  const next = md.replace(markers, block);
+  if (next === md) {
+    console.log('· README stats already up to date');
+  } else {
+    writeFileSync(readme, next);
+    console.log('✓ README stats updated');
+  }
 }

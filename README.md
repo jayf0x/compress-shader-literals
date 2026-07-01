@@ -26,8 +26,8 @@ bun add -d compress-shader-literals
 
 Shader comments and indentation are dead weight in the bundle — the GPU ignores them, the browser still downloads them. This strips them at build time.
 
-- Removes comments, collapses whitespace. Nothing else.
-- No renaming, no dead-code removal — output stays valid and readable.
+- Removes comments, collapses whitespace, joins statements, and trims space around delimiters. Whitespace and comments only.
+- No renaming, no dead-code removal, no operator-space removal — output stays valid.
 - Runs before your bundler's own minifier.
 
 ## Usage
@@ -85,39 +85,40 @@ minifyShader('// comment\nvoid  main() {}'); // → 'void main() {}'
 Real shaders shipped by popular libraries, run through the built-in minifier:
 
 <!-- STATS:START -->
-| Package | Shaders | Before | After | Saved |
-| ------- | ------: | -----: | ----: | ----: |
-| `vtk.js` | 142 | 276,617 B | 159,634 B | **42.3%** |
-| `three-stdlib` | 370 | 429,350 B | 272,486 B | **36.5%** |
-| `curtainsjs` | 7 | 3,406 B | 2,352 B | **30.9%** |
-| `hydra-synth` | 15 | 3,852 B | 2,675 B | **30.6%** |
-| `cesium` | 546 | 951,897 B | 664,581 B | **30.2%** |
-| `troika-three-utils` | 4 | 168 B | 120 B | **28.6%** |
-| `pixi.js` | 162 | 75,768 B | 56,152 B | **25.9%** |
-| `shader-park-core` | 18 | 10,794 B | 8,007 B | **25.8%** |
-| `@luma.gl/shadertools` | 24 | 149,192 B | 111,095 B | **25.5%** |
-| `three` | 281 | 240,906 B | 185,520 B | **23.0%** |
-| `playcanvas` | 856 | 1,297,844 B | 1,039,365 B | **19.9%** |
-| `ogl` | 22 | 6,109 B | 4,925 B | **19.4%** |
-| `deck.gl` | 132 | 242,113 B | 198,706 B | **17.9%** |
-| `@paper-design/shaders` | 30 | 142,466 B | 122,036 B | **14.3%** |
-| `@deck.gl/layers` | 104 | 223,902 B | 195,827 B | **12.5%** |
-| `@deck.gl/core` | 40 | 17,746 B | 15,738 B | **11.3%** |
-| `@deck.gl/aggregation-layers` | 56 | 43,713 B | 39,094 B | **10.6%** |
-| `@luma.gl/engine` | 29 | 11,357 B | 10,384 B | **8.6%** |
-| `@babylonjs/core` | 349 | 669,740 B | 661,013 B | **1.3%** |
-| `mapbox-gl` | 2 | 46 B | 46 B | **0.0%** |
-| `postprocessing` | 136 | 179,705 B | 179,705 B | **0.0%** |
-| **Total** | 3325 | 4,976,691 B | 3,929,461 B | **21.0%** |
 
-_3325 shaders · 2350/2350 parseable GLSL verified valid after minify · [how this is measured](docs/stats.md) · 2026-07-01_
+| Package                       | Shaders |      Before |       After |     Saved |
+| ----------------------------- | ------: | ----------: | ----------: | --------: |
+| `vtk.js`                      |     142 |   276,617 B |   159,634 B | **42.3%** |
+| `three-stdlib`                |     370 |   429,350 B |   272,486 B | **36.5%** |
+| `curtainsjs`                  |       7 |     3,406 B |     2,352 B | **30.9%** |
+| `hydra-synth`                 |      15 |     3,852 B |     2,675 B | **30.6%** |
+| `cesium`                      |     546 |   951,897 B |   664,581 B | **30.2%** |
+| `troika-three-utils`          |       4 |       168 B |       120 B | **28.6%** |
+| `pixi.js`                     |     162 |    75,768 B |    56,152 B | **25.9%** |
+| `shader-park-core`            |      18 |    10,794 B |     8,007 B | **25.8%** |
+| `@luma.gl/shadertools`        |      24 |   149,192 B |   111,095 B | **25.5%** |
+| `three`                       |     281 |   240,906 B |   185,520 B | **23.0%** |
+| `playcanvas`                  |     856 | 1,297,844 B | 1,039,365 B | **19.9%** |
+| `ogl`                         |      22 |     6,109 B |     4,925 B | **19.4%** |
+| `deck.gl`                     |     132 |   242,113 B |   198,706 B | **17.9%** |
+| `@paper-design/shaders`       |      30 |   142,466 B |   122,036 B | **14.3%** |
+| `@deck.gl/layers`             |     104 |   223,902 B |   195,827 B | **12.5%** |
+| `@deck.gl/core`               |      40 |    17,746 B |    15,738 B | **11.3%** |
+| `@deck.gl/aggregation-layers` |      56 |    43,713 B |    39,094 B | **10.6%** |
+| `@luma.gl/engine`             |      29 |    11,357 B |    10,384 B |  **8.6%** |
+| `@babylonjs/core`             |     349 |   669,740 B |   661,013 B |  **1.3%** |
+| `postprocessing`              |     136 |   179,705 B |   179,705 B |  **0.0%** |
+| **Total**                     |    3323 | 4,976,645 B | 3,929,415 B | **21.0%** |
+
+_3323 shaders · 2348/2348 parseable GLSL verified valid after minify · [how this is measured](docs/stats.md) · 2026-07-01_
+
 <!-- STATS:END -->
 
 ## How it works
 
 1. Parses each matched file with Babel — `.js`, `.jsx`, `.ts`, `.tsx`, `.mjs`, `.cjs`, `.mts`, `.cts` (not `.vue`/`.svelte`/`.glsl`, which aren't whole-file JS).
 2. Finds tagged (`` glsl`…` ``) and comment-prefixed (`/* glsl */ \`…\``) literals, skipping any with `${…}` interpolation.
-3. Strips comments and collapses each run of whitespace to a single space or newline — never to nothing, so adjacent tokens stay separated and `#version`/`#define` lines survive.
+3. Strips comments, collapses whitespace, and joins statements onto one line — keeping real newlines around `#` preprocessor directives and `\` line-continuations (which are newline-sensitive). Whitespace hugging a delimiter (`( ) { } ; ,`) is removed entirely; whitespace around operators (and `=`, to stay WGSL-generic-safe) is preserved, so adjacent tokens never merge.
 4. Rewrites the literal in place with [magic-string](https://github.com/Rich-Harris/magic-string), so sourcemaps stay intact.
 5. Runs as a `pre` transform, so your bundler's own minifier still sees the result.
 

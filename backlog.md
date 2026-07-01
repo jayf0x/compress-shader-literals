@@ -21,6 +21,16 @@ why: the parser gate covers GLSL only; roughly a third of the corpus (WGSL + gls
 - **(a) Wire a real WGSL parser** (`naga` via `naga-wasm`, or similar) into `validateGlsl` so WGSL gets the same before/after parse guarantee as GLSL. Biggest remaining coverage win — WGSL is ~a fifth of the corpus and only structurally checked today.
 - **(c) Opt-in `validate: true` in the plugin.** Re-parse each shader the plugin touches at build time and warn when one stops parsing, so user shaders outside the benchmark corpus get the same guarantee. Reuse `validateGlsl`.
 
+## Dialect-aware `=` trimming — reclaim the WGSL-blocked bytes
+
+files: `src/core.js` (`minifyShader`), `src/defaults.js` (`RE_DELIM_WS`), `tests/utils.js` (`isWGSL`), `tests/experimental.js`
+
+why: the delimiter pass strips whitespace around `( ) { } ; ,` but deliberately excludes `=`, because in WGSL `vec2<f32> = a` would weld the generic-close `>` onto `=` into a `>=` token. That exclusion is only needed for WGSL — GLSL has no `<>` generics, so stripping around `=` is safe there. Measured this session: adding `=` back took raw savings from ~9.5% to ~10.5% on the (then) corpus — a real ~1% left on the table for GLSL shaders.
+
+task: when a shader is confidently GLSL (not `isWGSL`), also trim around `=` (and `==`/`<=`/`>=`/`!=`/`+=`… must stay intact — only strip a lone `=` with spaces on both sides, never a digraph). Prototype in `tests/experimental.js`, prove 0 broken on the GLSL gate, and confirm WGSL output is untouched. Keep the WGSL-safe path exactly as-is.
+
+goal: recover the GLSL `=` bytes without reintroducing the WGSL `>=` welding.
+
 ## Replace hand-rolled regexes with a parser/library
 
 files: `src/core.js` (`minifyShader` — comment + whitespace regexes), `src/defaults.js` (`tagCommentRe`), `tests/experimental.js` (candidate + gate)
@@ -29,6 +39,7 @@ task: needs research first. `minifyShader` strips comments with regexes (`/\/\*.
 
 - **Comment stripping:** `extract-comments` / `strip-comments` are options, but they're tuned for JS (string- and regex-literal-aware) — GLSL has no string literals, so the extra machinery buys little and adds a dependency. Confirm whether they even improve correctness over the current regex before adopting.
 - **The real debt is the whitespace/newline pass** (statement joining, `#`-directive and `\`-continuation handling), which no comment library touches. Going properly regex-free there means tokenizing GLSL — `@shaderfrog/glsl-parser` is already a `tests/`-only dep and could lex → re-emit. That's the heavier, more correct path; weigh it against "stay tiny and boring" (AGENTS.md) and the fact that a tokenizer is WGSL-blind.
+- **Prior art:** `glsl-tokenizer` + `glsl-token-whitespace-trim` (~800k downloads) is the proven token-based reference — it's where the delimiter-trim trick came from. It's GLSL-only (hence WGSL-blind, and it trims around `=` unsafely for our WGSL needs). Study it before rebuilding a tokenizer path; it shows both the technique and its dialect ceiling.
 
 goal: decide, with a prototype in `tests/experimental.js` measured against the current output, whether dropping the hand-rolled passes is a net win (fewer edge-case bugs) or just a heavier dependency for the same result. Don't add a parser to `src` runtime deps unless it demonstrably prevents a real corruption the current code misses.
 
