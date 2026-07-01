@@ -1,5 +1,9 @@
 # Changelog
 
+## v1.3.0
+
+- Improve whitespace handling around delimiters
+
 ## v1.2.0
 
 - Add aggressive compression mode for improved minification
