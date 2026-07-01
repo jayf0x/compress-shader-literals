@@ -50,3 +50,16 @@ files: `tests/e2e.js`, `docs/stats.md`, README stats block, plus this session's 
 task: needs research first. Build clean stats comparing this tool to other minifiers usable in a Vite pipeline — Terser, UglifyJS, JSMin — and measure the _marginal_ bytes we save on top of an already-JS-minified bundle. Open question to answer: do those JS minifiers touch template-literal contents at all? (They generally don't — that's the hypothesis to confirm/refute.) Decide whether this lives as a comparison table in README or a local-only e2e benchmark.
 
 goal: honest answer to "is this still relevant once Terser has run / when shaders are already optimized?" `laurentlb/shader-minifier` is the heavyweight reference (renaming + dead-code elimination); this tool is effectively the whitespace/comment subset of that, as a bundler plugin. Quantify the real-world relevance instead of asserting it.
+
+## Expand the test corpus beyond npm
+
+files: `tests/utils.js` (`collectShaders`, `packages`), `tests/e2e.js`
+
+why: the corpus is npm packages that ship shaders as JS template literals — but that's only ~40–60% of real-world shader code. The rest lives where today's scanner can't reach:
+
+- GitHub shader repos
+- engine `/shaders/` folders
+- examples directories
+- CDN snippets (Hydra, ShaderToy, etc.)
+
+goal: broaden the corpus so the stats and validity gate reflect real usage, not just npm. Pairs with "Loose scan mode" above — both need a file-based corpus path, not the `dependencies` + import route.

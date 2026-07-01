@@ -9,9 +9,9 @@
 [![npm downloads](https://img.shields.io/npm/dm/compress-shader-literals?color=success)](https://www.npmjs.com/package/compress-shader-literals)
 [![license](https://img.shields.io/npm/l/compress-shader-literals?color=blue)](./LICENSE)
 
-A build-time minifier that strips comments and whitespace from GLSL & WGSL shaders written as template literals in your JS/TS — in any bundler, with no renaming, no toolchain, and no runtime cost.
+A tiny build-time minifier for GLSL & WGSL shaders written as template literals in your JS/TS. Strips comments + whitespace — any bundler, no renaming, no toolchain, no runtime cost.
 
-![Alt Preview](./assets/preview.png)
+![Alt Preview](./assets/preview.gif)
 
 ## Install
 
@@ -19,12 +19,9 @@ A build-time minifier that strips comments and whitespace from GLSL & WGSL shade
 
 ```sh
 bun add -d compress-shader-literals
-# or: npm i -D compress-shader-literals
 ```
 
 ## About
-
-Shader comments and indentation are dead weight in the bundle — the GPU ignores them, the browser still downloads them. This strips them at build time.
 
 - Removes comments, collapses whitespace, joins statements, and trims space around delimiters. Whitespace and comments only.
 - No renaming, no dead-code removal, no operator-space removal — output stays valid.
