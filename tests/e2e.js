@@ -10,6 +10,7 @@ import { execFileSync } from 'node:child_process';
 import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { brotliCompressSync } from 'node:zlib';
 
 import { minifyShader } from '../src/core.js';
 import { jsFiles, packages, shadersInCode, validateGlsl } from './utils.js';
@@ -45,47 +46,72 @@ function validate(pkg, before, after) {
 function benchPackage(pkg) {
   const root = resolve(here, 'node_modules', pkg);
   if (!existsSync(root)) return null;
-  let before = 0;
-  let after = 0;
+  // Keep the raw text around (not just byte counts) so the top packages can
+  // also be brotli-compressed as one blob further down — what actually ships.
+  let before = '';
+  let after = '';
   let count = 0;
   for (const file of jsFiles(root)) {
     for (const shader of shadersInCode(readFileSync(file, 'utf8'))) {
       const min = minifyShader(shader);
-      before += Buffer.byteLength(shader);
-      after += Buffer.byteLength(min);
+      before += shader;
+      after += min;
       count++;
       validate(pkg, shader, min);
     }
   }
-  return count ? { pkg, count, before, after } : null;
+  if (!count) return null;
+  return { pkg, count, before, after };
 }
 
-const ratio = (r) => (r.before === 0 ? 0 : (r.before - r.after) / r.before);
+const bytes = (r) =>
+  r.before === 0 ? 0 : (Buffer.byteLength(r.before) - Buffer.byteLength(r.after)) / Buffer.byteLength(r.before);
 const rows = packages()
   .map(benchPackage)
   .filter(Boolean)
-  .sort((a, b) => ratio(b) - ratio(a)); // best saved% first
+  .sort((a, b) => bytes(b) - bytes(a)); // best saved% first
 if (rows.length === 0) {
   console.error('No shaders found. Did you `bun add` the packages in tests/?');
   process.exit(1);
 }
 
+// Brotli-compressing every package's shaders (some are 100s of KB) at Node's
+// default max quality is what actually made this benchmark slow — not the
+// GLSL validation above. We only care whether the top savers still win after
+// compression, so only brotli-check those; leave the rest blank rather than
+// pay for a number nobody needs.
+const BROTLI_SAMPLE = 5;
+for (const r of rows.slice(0, BROTLI_SAMPLE)) {
+  r.brBefore = brotliCompressSync(r.before).length;
+  r.brAfter = brotliCompressSync(r.after).length;
+}
+
 const pct = (b, a) => (b === 0 ? 0 : ((b - a) / b) * 100).toFixed(1);
-const tBefore = rows.reduce((s, r) => s + r.before, 0);
-const tAfter = rows.reduce((s, r) => s + r.after, 0);
+const signed = (b, a) => {
+  const p = pct(b, a);
+  return p >= 0 ? `+${p}` : p;
+};
+const tBefore = rows.reduce((s, r) => s + Buffer.byteLength(r.before), 0);
+const tAfter = rows.reduce((s, r) => s + Buffer.byteLength(r.after), 0);
 const tCount = rows.reduce((s, r) => s + r.count, 0);
 
-const header = '| Package | Shaders | Before | After | Saved |';
-const sep = '| ------- | ------: | -----: | ----: | ----: |';
-const line = (name, count, b, a) =>
-  `| ${name} | ${count} | ${b.toLocaleString()} B | ${a.toLocaleString()} B | **${pct(b, a)}%** |`;
-const body = rows.map((r) => line(`\`${r.pkg}\``, r.count, r.before, r.after));
-const total = line('**Total**', tCount, tBefore, tAfter);
+const header = '| Package | Shaders | Before | After | Saved | Net after Brotli |';
+const sep = '| ------- | ------: | -----: | ----: | ----: | ---------------: |';
+const line = (name, count, b, a, brNet) =>
+  `| ${name} | ${count} | ${b.toLocaleString()} B | ${a.toLocaleString()} B | **${pct(b, a)}%** | ${brNet} |`;
+const body = rows.map((r) => {
+  const b = Buffer.byteLength(r.before);
+  const a = Buffer.byteLength(r.after);
+  const brNet = r.brBefore === undefined ? '—' : `${signed(r.brBefore, r.brAfter)}%`;
+  return line(`\`${r.pkg}\``, r.count, b, a, brNet);
+});
+const total = line('**Total**', tCount, tBefore, tAfter, '—');
 const table = [header, sep, ...body, total].join('\n');
 
 console.log(`\nReal-world shader compression (engine: minifyShader)\n`);
 console.log(table);
 console.log(`\n→ ${tCount} shaders across ${rows.length} package(s): ${pct(tBefore, tAfter)}% smaller\n`);
+console.log(`(Net after Brotli shown for the top ${BROTLI_SAMPLE} packages only — the rest are "—")\n`);
 
 // Validation gate: minify must not break a shader that parsed before.
 const v = validation;

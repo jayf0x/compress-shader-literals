@@ -1,21 +1,22 @@
 # How the stats are measured
 
-The numbers in the README come from [`tests/e2e.js`](../tests/e2e.js), run against the real published packages.
+The numbers in the README come from [`tests/e2e.js`](../tests/e2e.js), run against real published packages that ship their own shaders. The mechanics are commented in that file — this page is about what the numbers mean.
 
-## What's measured
+## What we're actually claiming
 
-- Walk each library's installed files and find every template literal whose contents look like a shader (matches `gl_FragColor`, `gl_Position`, `void main`, `precision …`, `fn main`).
-- Run the built-in `minifyShader` over each one and sum the bytes before and after.
+**Saved** is this tool's own contribution: real shader bytes stripped from real libraries, before any other compression touches them.
 
-## This is an engine benchmark, not default plugin output
+**Net after Brotli** answers the honest follow-up: "doesn't a compressor already do this for me on the wire?" It's the same comparison, but both sides are Brotli-compressed first. A positive number means this tool still shrinks the payload after Brotli has done its usual job — the number a CDN can't already claim credit for.
 
-These libraries don't tag their shaders, so the benchmark detects them by content. The plugin matches by **tag** (`` glsl`…` `` or `/* glsl */`) and skips `node_modules` by default — so out of the box it minifies **your own tagged shaders**, not a dependency's. To minify a dependency's shaders, clear `exclude` and supply a content-based `transform`.
+We don't report Gzip separately — it tracks close behind Brotli, and a second near-identical column wouldn't add information. We also only compute this for the top 5 packages by raw savings (the rest show `—`): Brotli-compressing every package in the corpus is real CPU time for a number that, past the top savers, isn't telling you anything new.
+
+## Why real packages, not synthetic ones
+
+Every shader in the benchmark is scraped out of installed npm packages, not hand-written for the demo. That also means it's an engine benchmark, not what the plugin does by default: these libraries don't tag their shaders, and the plugin only touches **tagged** literals unless you widen `include`/`exclude` yourself. See [AGENTS.md](../AGENTS.md) for the tagging rules.
 
 ## Validity
 
-Every GLSL shader in the set is parsed before and after minify with [`@shaderfrog/glsl-parser`](https://github.com/shaderfrog/glsl-parser). The run fails if minify breaks a shader that was valid before.
-
-WGSL has no GLSL parser wired yet, and glslify fragments don't parse on their own (missing `#include` context) — so neither can be _parse_-checked. They aren't unchecked, though: both are run through parser-free structural invariants (bracket/paren/brace balance and `\` line-continuation integrity must be preserved through minify), which catch gross corruption in any dialect. A full WGSL parse gate is a tracked next step (see `backlog.md`).
+Nothing in this benchmark is allowed to silently break a shader. Every result is checked — parsed before and after minify where a parser exists, structurally checked where it doesn't — and the run fails hard if minify corrupts anything that used to work.
 
 ## Reproduce
 

@@ -51,6 +51,16 @@ task: needs research first. Build clean stats comparing this tool to other minif
 
 goal: honest answer to "is this still relevant once Terser has run / when shaders are already optimized?" `laurentlb/shader-minifier` is the heavyweight reference (renaming + dead-code elimination); this tool is effectively the whitespace/comment subset of that, as a bundler plugin. Quantify the real-world relevance instead of asserting it.
 
+## Parallelize `e2e.js` package loading
+
+files: `tests/e2e.js`, `tests/validate.js`, `tests/utils.js` (`packages`)
+
+why: the ~90s+ runtime of `bun run test:e2e` isn't the minify/brotli work — it's `validate.js` synchronously `require`ing all 20 benchmarked packages one after another (some, like `cesium`/`@babylonjs/core`/`playcanvas`, are heavy). Pre-existing cost, not caused by any recent change to the stats table.
+
+task: each package's validate-and-bench step is independent — no shared state, output is just `{ pkg, count, before, after }` (+ optional brotli fields). Fan the per-package work out across worker processes (`node:child_process` or `node:worker_threads`), collect results, then do the existing sort/table/write in the parent. Keep today's synchronous single-process path as a fallback if parallelizing turns out not worth the complexity for a `tests/`-only script.
+
+goal: get real wall-clock time down without touching what's measured or reported.
+
 ## Expand the test corpus beyond npm
 
 files: `tests/utils.js` (`collectShaders`, `packages`), `tests/e2e.js`

@@ -25,24 +25,24 @@ const BROWSER_GLOBAL =
   /\b(window|document|navigator|self|HTMLElement|customElements|requestAnimationFrame)\b is not defined/;
 
 let failed = 0;
-const results = [];
 
-for (const name of pkgs) {
+console.log(`\nPackage validation (${pkgs.length} benchmarked libraries)\n`);
+for (let i = 0; i < pkgs.length; i++) {
+  const name = pkgs[i];
+  process.stdout.write(`  (${i + 1}/${pkgs.length}) ${name} ... `);
   try {
     await import(name);
-    results.push(`✓ ${name} — loads`);
+    console.log('✓ loads');
   } catch (err) {
     if (BROWSER_GLOBAL.test(err.message)) {
-      results.push(`✓ ${name} — loads (browser-only)`);
+      console.log('✓ loads (browser-only)');
     } else {
       failed++;
-      results.push(`✗ ${name} — ${err.message.split('\n')[0]}`);
+      console.log(`✗ ${err.message.split('\n')[0]}`);
     }
   }
 }
 
-console.log(`\nPackage validation (${pkgs.length} benchmarked libraries)\n`);
-for (const line of results) console.log('  ' + line);
 console.log(`\n${pkgs.length - failed}/${pkgs.length} usable\n`);
 
 if (failed > 0) process.exit(1);
