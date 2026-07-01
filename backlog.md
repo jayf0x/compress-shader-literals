@@ -10,13 +10,19 @@ task: add an opt-in `scan: 'loose'` option that finds tagged and comment-prefixe
 
 goal: minify shaders living in SFCs and non-JS containers without corrupting non-shader files. Gate every loose match by a content signal before stripping (reuse `SHADER_SIGNAL` in `tests/utils.js`) — the regex finds candidates, the signal confirms they're shaders.
 
-## Extend shader validation
+## Extend shader validation — cover the WGSL/fragment blind spot
 
-files: `tests/e2e.js` (existing GLSL gate via `@shaderfrog/glsl-parser`), `src/plugin.js`
+files: `tests/e2e.js` + `tests/experimental.js` (GLSL gate via `@shaderfrog/glsl-parser`), `tests/utils.js` (`validateGlsl`, `continuationOk`), `src/plugin.js`
 
-task: `tests/e2e.js` already fails the run if minify breaks a GLSL shader that parsed before. Two gaps left: (a) WGSL has no parser wired — pick one (naga-wasm or a WGSL parser) or keep skipping it honestly; (b) optional opt-in `validate: true` in the plugin that re-parses each shader it touches and warns when one stops parsing, so user shaders get the same guarantee as the benchmark set.
+state: as of the current corpus (869 shaders, 7 libs), the gate verifies **558 GLSL shaders (0 broken)** but leaves **190 WGSL + 121 glslify fragments = 311 (36%) unverified**. `minifyShader` runs on all of them; the only thing guarding the unverified 311 is `continuationOk` (a dialect-agnostic `\`-continuation smoke check). This is now the sharpest edge, because the aggressive whitespace pass (statement-joining) ships as the default — a real user issue would most likely come from here.
 
-goal: validity guaranteed beyond the benchmark corpus, and WGSL covered.
+task, three gaps:
+
+- **(a) WGSL has a real parser now (190 shaders, ~22% of corpus).** Wire `naga` (via `naga-wasm`) or another WGSL parser into `validateGlsl` so WGSL gets the same before/after parse guarantee as GLSL, instead of being skipped. Biggest single coverage win.
+- **(b) glslify fragments (121).** These don't parse standalone even _before_ minify (missing `#include` context), so a parser can't gate them. Best reachable guarantee is a structural invariant that doesn't need a full parse — `continuationOk` is the first; consider more (balanced braces/parens before==after, no `;` lost) rather than trying to make them parse.
+- **(c) opt-in `validate: true` in the plugin.** Re-parse each shader the plugin touches at build time and warn when one stops parsing, so real user shaders (outside the benchmark corpus) get the same guarantee. Reuse `validateGlsl`.
+
+goal: shrink the unverified 36% — WGSL parsed (a), fragments structurally guarded (b), and the guarantee extended to user shaders at build time (c).
 
 ## Replace hand-rolled regexes with a parser/library
 
