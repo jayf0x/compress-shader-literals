@@ -86,15 +86,18 @@ Real shaders shipped by popular libraries, run through the built-in minifier:
 
 <!-- STATS:START -->
 
-| Package            | Shaders |    Before |     After |     Saved |
-| ------------------ | ------: | --------: | --------: | --------: |
-| `three`            |     281 | 240,772 B | 203,428 B | **15.5%** |
-| `ogl`              |      22 |   6,109 B |   5,335 B | **12.7%** |
-| `shader-park-core` |      18 |  10,794 B |   9,033 B | **16.3%** |
-| `curtainsjs`       |       7 |   3,406 B |   2,563 B | **24.8%** |
-| **Total**          |     328 | 261,081 B | 220,359 B | **15.6%** |
+| Package                 | Shaders |      Before |       After |     Saved |
+| ----------------------- | ------: | ----------: | ----------: | --------: |
+| `@babylonjs/core`       |     349 |   669,740 B |   664,617 B |  **0.8%** |
+| `@paper-design/shaders` |      30 |   142,466 B |   129,723 B |  **8.9%** |
+| `curtainsjs`            |       7 |     3,406 B |     2,485 B | **27.0%** |
+| `ogl`                   |      22 |     6,109 B |     5,182 B | **15.2%** |
+| `pixi.js`               |     162 |    75,768 B |    59,432 B | **21.6%** |
+| `shader-park-core`      |      18 |    10,794 B |     8,721 B | **19.2%** |
+| `three`                 |     281 |   240,772 B |   197,399 B | **18.0%** |
+| **Total**               |     869 | 1,149,055 B | 1,067,559 B |  **7.1%** |
 
-_328 shaders · 303/303 parseable GLSL verified valid after minify · [how this is measured](docs/stats.md) · 2026-06-29_
+_869 shaders · 558/558 parseable GLSL verified valid after minify · [how this is measured](docs/stats.md) · 2026-07-01_
 
 <!-- STATS:END -->
 

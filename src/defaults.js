@@ -31,5 +31,3 @@ export const RE_BLOCK_COMMENT = /\/\*[\s\S]*?\*\//g;
 export const RE_LINE_COMMENT = /\/\/.*$/gm;
 /** A run of spaces/tabs (collapse to one space — never touches newlines). */
 export const RE_INLINE_WS = /[ \t]+/g;
-/** Two or more consecutive newlines (collapse blank lines to one). */
-export const RE_BLANK_LINES = /\n{2,}/g;

@@ -1,14 +1,7 @@
 import { parse } from '@babel/parser';
 import _traverse from '@babel/traverse';
 
-import {
-  DEFAULT_TAGS,
-  RE_BLOCK_COMMENT,
-  RE_CRLF,
-  RE_INLINE_WS,
-  RE_LINE_COMMENT,
-  tagCommentRe,
-} from './defaults.js';
+import { DEFAULT_TAGS, RE_BLOCK_COMMENT, RE_CRLF, RE_INLINE_WS, RE_LINE_COMMENT, tagCommentRe } from './defaults.js';
 
 const traverse = _traverse.default || _traverse;
 
