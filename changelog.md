@@ -1,5 +1,11 @@
 # Changelog
 
+## v1.2.0
+
+- Add aggressive compression mode for improved minification
+- Expand shader validation
+- Sort stats by compression rate
+
 ## v1.1.3
 
 - Strengthen default plugin behavior
