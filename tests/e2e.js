@@ -13,29 +13,29 @@ import { fileURLToPath } from 'node:url';
 import { brotliCompressSync } from 'node:zlib';
 
 import { minifyShader } from '../src/core.js';
-import { jsFiles, packages, shadersInCode, validateGlsl } from './utils.js';
+import { isWGSL, jsFiles, packages, shadersInCode, validateGlsl } from './utils.js';
 
 const here = dirname(fileURLToPath(import.meta.url));
 
 // Validate the benchmarked libraries actually load before trusting their stats.
 execFileSync('node', [resolve(here, 'validate.js')], { stdio: 'inherit' });
 
-// Proof the minifier preserves meaning: every GLSL shader that parses before
-// minify must still parse after. A shader that breaks is a real bug → fatal.
-// Fragments that don't parse even *before* minify (glslify chunks missing their
-// #include context) are out of scope — counted as skipped, not validated.
-const validation = { glslOk: 0, broken: 0, wgsl: 0, fragments: 0, broke: [] };
+// Proof the minifier preserves meaning: every shader that parses before minify
+// (GLSL via @shaderfrog/glsl-parser, WGSL via wgsl_reflect) must still parse
+// after. A shader that breaks is a real bug → fatal. Fragments that don't parse
+// even *before* minify (glslify chunks missing their #include context, or
+// macro-laden WGSL like Babylon.js's `#ifdef`-guarded shaders) are out of scope
+// — counted as skipped, not validated.
+const validation = { ok: 0, okWgsl: 0, broken: 0, fragments: 0, broke: [] };
 function validate(pkg, before, after) {
   switch (validateGlsl(before, after)) {
     case 'ok':
-      validation.glslOk++;
+      validation.ok++;
+      if (isWGSL(before)) validation.okWgsl++;
       break;
     case 'broken':
       validation.broken++;
       validation.broke.push(pkg);
-      break;
-    case 'wgsl':
-      validation.wgsl++;
       break;
     case 'fragment':
       validation.fragments++;
@@ -115,18 +115,22 @@ console.log(`(Net after Brotli shown for the top ${BROTLI_SAMPLE} packages only 
 
 // Validation gate: minify must not break a shader that parsed before.
 const v = validation;
-console.log('Validity check (@shaderfrog/glsl-parser):');
-console.log(`  ✓ ${v.glslOk} GLSL shaders parse before AND after minify (${v.broken} broken)`);
-console.log(`  · ${v.wgsl} WGSL — no GLSL parser to validate against (skipped)`);
-console.log(`  · ${v.fragments} fragments unparseable before minify (glslify chunks — skipped)\n`);
+console.log('Validity check (@shaderfrog/glsl-parser + wgsl_reflect):');
+console.log(
+  `  ✓ ${v.ok} shaders parse before AND after minify (${v.ok - v.okWgsl} GLSL, ${v.okWgsl} WGSL) — ${v.broken} broken`
+);
+console.log(`  · ${v.fragments} fragments unparseable before minify (glslify/macro chunks — skipped)\n`);
 if (v.broken > 0) {
   console.error(`✗ minify broke ${v.broken} shader(s) that were valid before:`);
   for (const b of v.broke.slice(0, 10)) console.error('    ' + b);
   process.exit(1);
 }
 
-// One honest, machine-checked line for the README caption.
-const validityNote = `${v.glslOk}/${v.glslOk + v.broken} parseable GLSL verified valid after minify`;
+// One honest, machine-checked line for the README caption. v.ok/(v.ok + v.broken)
+// would always read N/N — a broken shader aborts the run above before this line
+// runs — so the informative ratio is against the whole corpus (tCount), which
+// shows how much of it is parseable and verified vs. out-of-scope fragments.
+const validityNote = `${v.ok}/${tCount} parseable shaders (GLSL + WGSL) verified valid after minify`;
 
 if (process.argv.includes('--write')) {
   const readme = resolve(here, '..', 'README.md');

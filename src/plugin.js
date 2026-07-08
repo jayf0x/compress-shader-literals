@@ -19,6 +19,7 @@ export const compressShaderLiterals = createUnplugin((options = {}) => {
   // Accumulate the shader source before/after so byte-snap can report the diff.
   let beforeText = '';
   let afterText = '';
+  let shaderCount = 0;
 
   return {
     name: 'compress-shader-literals',
@@ -51,6 +52,7 @@ export const compressShaderLiterals = createUnplugin((options = {}) => {
         if (options.outputRatio) {
           beforeText += literal.value;
           afterText += minified;
+          shaderCount++;
         }
       }
 
@@ -64,7 +66,8 @@ export const compressShaderLiterals = createUnplugin((options = {}) => {
 
     buildEnd() {
       if (options.outputRatio && beforeText) {
-        diff(snap.text(beforeText), snap.text(afterText)).print();
+        const label = `compress-shader-literals: ${shaderCount} shader literal${shaderCount === 1 ? '' : 's'}`;
+        diff(snap.text(beforeText), snap.text(afterText)).print(label);
       }
     },
   };

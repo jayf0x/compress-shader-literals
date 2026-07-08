@@ -28,6 +28,7 @@
   },
   "type": "module",
   "devDependencies": {
-    "@shaderfrog/glsl-parser": "^0.2.4"
+    "@shaderfrog/glsl-parser": "^0.2.4",
+    "wgsl_reflect": "^1.5.0"
   }
 }

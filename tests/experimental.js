@@ -5,9 +5,9 @@
  *
  * Runs every method in utils.js `METHODS` over the real shader corpus, reports
  * bytes saved (raw / gzip / brotli via byte-snap) and the marginal win of each
- * candidate over the shipped baseline, and fails if any method breaks a GLSL
- * shader that parsed before. Nothing here changes src/ — prove a win here, then
- * graduate it into src/core.js (see backlog.md). Add a method in utils.js.
+ * candidate over the shipped baseline, and fails if any method breaks a GLSL or
+ * WGSL shader that parsed before. Nothing here changes src/ — prove a win here,
+ * then graduate it into src/core.js (see backlog.md). Add a method in utils.js.
  */
 import { METHODS, collectShaders, measure, validateGlsl } from './utils.js';
 
@@ -17,7 +17,7 @@ console.log(`\nExperimental suite — ${shaders.length} shaders, ${METHODS.lengt
 function run(transform) {
   let before = '';
   let after = '';
-  const v = { ok: 0, broken: 0, wgsl: 0, fragment: 0, broke: [] };
+  const v = { ok: 0, broken: 0, fragment: 0, broke: [] };
   for (const { pkg, src } of shaders) {
     const out = transform(src);
     before += src;
@@ -44,7 +44,7 @@ let failed = false;
 for (const { name, v } of results) {
   if (v.broken > 0) failed = true;
   console.log(
-    `  ${v.broken > 0 ? '✗' : '✓'} ${name.padEnd(20)} ${v.ok} ok · ${v.broken} broken · ${v.wgsl} wgsl · ${v.fragment} fragment`
+    `  ${v.broken > 0 ? '✗' : '✓'} ${name.padEnd(20)} ${v.ok} ok · ${v.broken} broken · ${v.fragment} fragment`
   );
   if (v.broken > 0) console.log(`      broke in: ${[...new Set(v.broke)].join(', ')}`);
 }

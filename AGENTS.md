@@ -10,25 +10,25 @@ Intent: stay tiny and boring. This is a one-job tool. Resist scope creep.
 
 ## Layout
 
-| Path                     | Role                                                                                                                                    |
-| ------------------------ | --------------------------------------------------------------------------------------------------------------------------------------- |
-| `src/core.js`            | The engine: `extractShaderLiterals` (Babel AST) + `minifyShader`                                                                        |
-| `src/defaults.js`        | Shared defaults + patterns (tags, include/exclude, comment regex)                                                                       |
-| `src/plugin.js`          | unplugin wrapper; `outputRatio` stats via `byte-snap`                                                                                   |
-| `src/index.js`           | Re-export entry                                                                                                                         |
-| `src/index.d.ts`         | Hand-written types (no TS build — copied to `dist/` on build)                                                                           |
-| `tests/core.test.js`     | Unit tests (`bun test`)                                                                                                                 |
-| `tests/plugin.test.js`   | Plugin with/without tests: shrinks + stays valid JS, no-op without a tag, include coverage                                              |
-| `tests/utils.js`         | Shared test helpers: corpus (`collectShaders`/`packages`), detection regexes, `validateGlsl`, `measure` (byte-snap)                     |
-| `tests/build-smoke.js`   | Loads built `dist/` (ESM + CJS); asserts exports + transform work                                                                       |
-| `tests/run-test.js`      | Manual demo (`node tests/run-test.js`)                                                                                                  |
-| `tests/dump-chunks.js`   | Local-only: dumps each shader + every `METHODS` output (with byte savings) to gitignored `chunks.dump.txt`                              |
-| `tests/experimental.js`  | Local-only pre-release suite (`bun run tests:next`): every `utils.js` `METHODS` transform measured + GLSL-gated vs the shipped baseline |
-| `tests/e2e.js`           | Benchmarks real npm packages → injects README stats table; GLSL validity gate                                                           |
-| `tests/validate.js`      | Asserts benchmarked packages still load                                                                                                 |
-| `docs/stats.md`          | Explains how the README stats are measured (method only, no live numbers)                                                               |
-| `backlog.md`             | Next-up work items, each pointing at the files to read first                                                                            |
-| `scripts/publish-npm.sh` | The release flow (`bun run npm:deploy`)                                                                                                 |
+| Path                     | Role                                                                                                                                        |
+| ------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------- |
+| `src/core.js`            | The engine: `extractShaderLiterals` (Babel AST) + `minifyShader`                                                                            |
+| `src/defaults.js`        | Shared defaults + patterns (tags, include/exclude, comment regex)                                                                           |
+| `src/plugin.js`          | unplugin wrapper; `outputRatio` stats via `byte-snap`                                                                                       |
+| `src/index.js`           | Re-export entry                                                                                                                             |
+| `src/index.d.ts`         | Hand-written types (no TS build — copied to `dist/` on build)                                                                               |
+| `tests/core.test.js`     | Unit tests (`bun test`)                                                                                                                     |
+| `tests/plugin.test.js`   | Plugin with/without tests: shrinks + stays valid JS, no-op without a tag, include coverage                                                  |
+| `tests/utils.js`         | Shared test helpers: corpus (`collectShaders`/`packages`), detection regexes, `validateGlsl`, `measure` (byte-snap)                         |
+| `tests/build-smoke.js`   | Loads built `dist/` (ESM + CJS); asserts exports + transform work                                                                           |
+| `tests/run-test.js`      | Manual demo (`node tests/run-test.js`)                                                                                                      |
+| `tests/dump-chunks.js`   | Local-only: dumps each shader + every `METHODS` output (with byte savings) to gitignored `chunks.dump.txt`                                  |
+| `tests/experimental.js`  | Local-only pre-release suite (`bun run tests:next`): every `utils.js` `METHODS` transform measured + validity-gated vs the shipped baseline |
+| `tests/e2e.js`           | Benchmarks real npm packages → injects README stats table; GLSL + WGSL validity gate                                                        |
+| `tests/validate.js`      | Asserts benchmarked packages still load                                                                                                     |
+| `docs/stats.md`          | Explains how the README stats are measured (method only, no live numbers)                                                                   |
+| `backlog.md`             | Next-up work items, each pointing at the files to read first                                                                                |
+| `scripts/publish-npm.sh` | The release flow (`bun run npm:deploy`)                                                                                                     |
 
 ## Commands
 
@@ -48,9 +48,9 @@ bun run npm:deploy  # bump + build + typecheck + test + e2e + commit + tag (GHA 
 - **Source of truth is `src/` (plain ESM JS).** There is no TS build. Types are hand-maintained in `src/index.d.ts`.
 - **Build bundles `src/plugin.js`, not `src/index.js`.** With `sideEffects: false`, bun tree-shakes the pure re-export entry to nothing — so the entry is `plugin.js` renamed to `index.js`. Don't "fix" this back. Because of that, `plugin.js` also re-exports the public core API (`minifyShader`, `extractShaderLiterals`) so `dist` exports match `index.d.ts`. `tests/build-smoke.js` guards this.
 - **Runtime deps must be `--external` in the build script** (they're declared in `dependencies`, not bundled). Add a new runtime dep → add it to the `--external` list too.
-- **Adding a benchmark package:** `bun add <pkg>` in `tests/` — that's it. The corpus auto-derives from `tests/package.json` `dependencies` (via `packages()` in `utils.js`), no hardcoded list. Only packages shipping their _own_ GLSL/WGSL template literals register; renderers that consume user shaders contribute 0 and should be removed. Keep tooling (the `@shaderfrog/glsl-parser` validator) in `devDependencies` so it isn't benchmarked as a 0-row.
+- **Adding a benchmark package:** `bun add <pkg>` in `tests/` — that's it. The corpus auto-derives from `tests/package.json` `dependencies` (via `packages()` in `utils.js`), no hardcoded list. Only packages shipping their _own_ GLSL/WGSL template literals register; renderers that consume user shaders contribute 0 and should be removed. Keep tooling (the `@shaderfrog/glsl-parser` and `wgsl_reflect` validators) in `devDependencies` so it isn't benchmarked as a 0-row.
 - **README stats are generated**, between `<!-- STATS:START/END -->`. Edit `tests/e2e.js`, not the table. The release script runs `e2e --write` then `format` so the committed table stays prettier-clean. The caption is the one place live numbers belong; `docs/stats.md` explains the method and stays version-independent.
-- **`tests/e2e.js` is also a validity gate.** It parses every GLSL shader before and after minify with `@shaderfrog/glsl-parser` (a `tests/`-only dep) and exits non-zero if minify breaks one. WGSL and unparseable glslify fragments can't be parse-checked, but aren't unguarded: `validateGlsl` runs parser-free structural invariants on them (`bracketsOk` bracket balance + `continuationOk` `\`-continuation integrity), so gross corruption still fails the run in any dialect. If you change `minifyShader`, this is what proves you didn't corrupt real shaders.
+- **`tests/e2e.js` is also a validity gate.** It parses every shader before and after minify with a real parser for its dialect — `@shaderfrog/glsl-parser` for GLSL, `wgsl_reflect` for WGSL (both `tests/`-only deps) — and exits non-zero if minify breaks one. Unparseable fragments (glslify chunks missing `#include` context, or macro-laden WGSL like Babylon.js's `#ifdef`-guarded shaders) can't be parse-checked, but aren't unguarded: `validateGlsl` runs parser-free structural invariants on them first (`bracketsOk` bracket balance + `continuationOk` `\`-continuation integrity), so gross corruption still fails the run regardless of dialect. If you change `minifyShader`, this is what proves you didn't corrupt real shaders.
 - **Default `include` is the JS/TS family** (`/\.[mc]?[jt]sx?$/` — covers `.mjs/.cjs/.mts/.cts`), because Babel parses whole files. `.vue`/`.svelte`/`.glsl` won't parse and yield nothing; reaching them is a backlog item (`scan: 'loose'`).
 - **`byte-snap`** (the npm dependency) is the stats engine for `outputRatio`. It ships a `require` export from **1.0.5** on, so the CJS build can `require` it — keep the dependency floor at `^1.0.5`. `tests/build-smoke.js` would catch a regression here.
 - **Defaults live in `src/defaults.js`.** Tags, include/exclude, the comment-tag regex, and the named `minifyShader` patterns (`RE_BLOCK_COMMENT`, `RE_INLINE_WS`, …) are defined once; the comment-tag regex is derived from the tag list so custom `tags` work in `/* tag */` form too. Don't re-inline these literals in `core.js`/`plugin.js` — reuse the named `RE_*` so future compression candidates in `tests/` and the shipped minifier can't drift.

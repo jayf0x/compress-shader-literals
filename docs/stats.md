@@ -16,7 +16,7 @@ Every shader in the benchmark is scraped out of installed npm packages, not hand
 
 ## Validity
 
-Nothing in this benchmark is allowed to silently break a shader. Every result is checked — parsed before and after minify where a parser exists, structurally checked where it doesn't — and the run fails hard if minify corrupts anything that used to work.
+Nothing in this benchmark is allowed to silently break a shader. Every result is parsed before and after minify with a real parser for its dialect (GLSL and WGSL both have one), or structurally checked where no parser can make sense of the fragment — and the run fails hard if minify corrupts anything that used to work.
 
 ## Reproduce
 

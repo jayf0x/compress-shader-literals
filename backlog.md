@@ -12,14 +12,13 @@ goal: minify shaders living in SFCs and non-JS containers without corrupting non
 
 test target: `lygia` is a good showcase — it ships raw `.glsl`/`.wgsl`/`.wesl` files (and stores shaders as plain string properties in a `weslBundle`, not template literals), so the current AST scanner extracts 0 from it. A loose/file scanner would reach it. Note two blockers: its shaders are mostly `#include`-style fragments (won't pass `SHADER_SIGNAL`, which wants a full-shader marker like `void main`), and it exposes no bare import, so `validate.js` can't load it — a loose-scan benchmark would need a file-based corpus path, not the `dependencies` + import route.
 
-## Extend shader validation — cover the WGSL/fragment blind spot
+## Extend shader validation — opt-in build-time validation
 
-files: `tests/e2e.js` + `tests/experimental.js` (GLSL gate via `@shaderfrog/glsl-parser`), `tests/utils.js` (`validateGlsl`), `src/plugin.js`
+files: `src/plugin.js`, `tests/utils.js` (`validateGlsl`)
 
-why: the parser gate covers GLSL only; roughly a third of the corpus (WGSL + glslify fragments) can't be parse-checked. `validateGlsl` already applies two parser-free invariants there (`continuationOk`, `bracketsOk`) that catch gross corruption in any dialect — but those prove absence of bracket/continuation damage, not full validity. Two ways left to close the gap:
+why: `validateGlsl` now parses both dialects for real — `@shaderfrog/glsl-parser` for GLSL, `wgsl_reflect` (a `tests/`-only dep) for WGSL — so the benchmark corpus gets a genuine before/after parse guarantee either way. Unparseable fragments (glslify chunks missing `#include` context, macro-laden WGSL like Babylon.js's `#ifdef`-guarded shaders) are still out of scope for any parser, but are still structurally checked (`bracketsOk`, `continuationOk`). What's left: this guarantee only covers the benchmark corpus, not a user's own shaders.
 
-- **(a) Wire a real WGSL parser** (`naga` via `naga-wasm`, or similar) into `validateGlsl` so WGSL gets the same before/after parse guarantee as GLSL. Biggest remaining coverage win — WGSL is ~a fifth of the corpus and only structurally checked today.
-- **(c) Opt-in `validate: true` in the plugin.** Re-parse each shader the plugin touches at build time and warn when one stops parsing, so user shaders outside the benchmark corpus get the same guarantee. Reuse `validateGlsl`.
+- **Opt-in `validate: true` in the plugin.** Re-parse each shader the plugin touches at build time and warn when one stops parsing, so user shaders outside the benchmark corpus get the same guarantee. Reuse `validateGlsl` (move it, or the parsing it wraps, from `tests/utils.js` into `src/` if this ships — decide whether `wgsl_reflect`/`@shaderfrog/glsl-parser` are worth adding as real runtime deps for an opt-in feature, given "stay tiny and boring").
 
 ## Dialect-aware `=` trimming — reclaim the WGSL-blocked bytes
 

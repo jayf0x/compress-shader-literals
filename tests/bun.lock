@@ -28,6 +28,7 @@
       },
       "devDependencies": {
         "@shaderfrog/glsl-parser": "^0.2.4",
+        "wgsl_reflect": "^1.5.0",
       },
     },
   },
@@ -1043,6 +1044,8 @@
     "wav": ["wav@1.0.2", "", { "dependencies": { "buffer-alloc": "^1.1.0", "buffer-from": "^1.0.0", "debug": "^2.2.0", "readable-stream": "^1.1.14", "stream-parser": "^0.3.1" } }, "sha512-viHtz3cDd/Tcr/HbNqzQCofKdF6kWUymH9LGDdskfWFoIy/HJ+RTihgjEcHfnsy1PO4e9B+y4HwgTwMrByquhg=="],
 
     "webworker-promise": ["webworker-promise@0.5.0", "", {}, "sha512-14iR79jHAV7ozwvbfif+3wCaApT3I1g8Lo0rJZrwAu6wxZGx/08Y8KXz6as6ZLNUEEufeiEBBYrqyDBClXOsEw=="],
+
+    "wgsl_reflect": ["wgsl_reflect@1.5.0", "", {}, "sha512-ntYNHZgzBHs+pzmVCsSiRqyye3Ey1xdKEX0Ls8PiDBKIiGFwUOef0PdBbYvUyGTGFwLKkqTZOGmPAed70mquTw=="],
 
     "wordwrapjs": ["wordwrapjs@5.1.1", "", {}, "sha512-0yweIbkINJodk27gX9LBGMzyQdBDan3s/dEAiwBOj+Mf0PPyWL6/rikalkv8EeD0E8jm4o5RXEOrFTP3NXbhJg=="],
 

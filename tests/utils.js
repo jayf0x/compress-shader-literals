@@ -11,6 +11,7 @@ import { existsSync, readFileSync, readdirSync, statSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { brotliCompressSync, gzipSync } from 'node:zlib';
+import { WgslParser } from 'wgsl_reflect/wgsl_reflect.module.js';
 
 import { minifyShader } from '../src/core.js';
 import { RE_BLOCK_COMMENT, RE_CRLF, RE_LINE_COMMENT } from '../src/defaults.js';
@@ -32,7 +33,7 @@ export const METHODS = [['minify (shipped)', minifyShader]];
 
 /** A template-literal body "is a shader" if its text uses GLSL/WGSL keywords. */
 export const SHADER_SIGNAL = /\b(gl_FragColor|gl_Position|void\s+main|precision\s+(highp|mediump|lowp)|fn\s+main)\b/;
-/** WGSL markers — used to skip WGSL from the GLSL-only parser gate. */
+/** WGSL markers — used to route WGSL to the wgsl_reflect parser instead of GLSL's. */
 export const WGSL_SIGNAL = /@vertex|@fragment|@group|var<|@compute/;
 /** JS module files we walk for shader literals. */
 export const JS_FILE = /\.(js|mjs|cjs)$/;
@@ -137,28 +138,30 @@ export function collectShaders() {
 // --- Validation & measurement ------------------------------------------------
 
 /**
- * Classify one before/after pair against the GLSL parser:
+ * Classify one before/after pair against a real parser for its dialect
+ * (`@shaderfrog/glsl-parser` for GLSL, `wgsl_reflect` for WGSL):
  *   'ok'       — parsed before AND after (the guarantee we want)
  *   'broken'   — parsed before, not after (a real bug)
- *   'wgsl'     — WGSL, no GLSL parser to check it against (skipped)
- *   'fragment' — didn't parse even before (glslify chunk, out of scope)
+ *   'fragment' — didn't parse even before (glslify chunk or macro-laden WGSL
+ *                fragment — e.g. `#ifdef`-guarded Babylon.js shaders — out of scope)
  *
- * The parser only guards standalone GLSL. Before delegating to it, catch the
- * corruption it *can't* see with parser-free invariants (broken line-continuation,
- * changed bracket balance) — these are the only checks that reach WGSL and glslify
- * fragments, no matter the dialect.
+ * Before delegating to either parser, catch the corruption they *can't* see with
+ * parser-free invariants (broken line-continuation, changed bracket balance) —
+ * these are the only checks that reach fragments too broken for any parser.
  */
 export function validateGlsl(before, after) {
   if (continuationOk(before) && !continuationOk(after)) return 'broken';
   if (!bracketsOk(before, after)) return 'broken';
-  if (isWGSL(before)) return 'wgsl';
+  const parse = isWGSL(before)
+    ? (src) => new WgslParser().parse(src)
+    : (src) => glsl.parser.parse(src, { quiet: true });
   try {
-    glsl.parser.parse(before, { quiet: true });
+    parse(before);
   } catch {
     return 'fragment';
   }
   try {
-    glsl.parser.parse(after, { quiet: true });
+    parse(after);
     return 'ok';
   } catch {
     return 'broken';
