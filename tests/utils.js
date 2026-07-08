@@ -171,20 +171,17 @@ export function validateGlsl(before, after) {
 /** Raw bytes (byte-snap) plus what actually ships after gzip and brotli. */
 export function measure(before, after) {
   const raw = diff(snap.text(before), snap.text(after)).json();
-  const gzBefore = gzipSync(before).length;
-  const gzAfter = gzipSync(after).length;
-  const brBefore = brotliCompressSync(before).length;
-  const brAfter = brotliCompressSync(after).length;
-  const pct = (b, a) => (b === 0 ? 0 : ((b - a) / b) * 100);
+  const gz = diff(snap.buffer(gzipSync(before)), snap.buffer(gzipSync(after))).json();
+  const br = diff(snap.buffer(brotliCompressSync(before)), snap.buffer(brotliCompressSync(after))).json();
   return {
     rawBefore: raw.beforeBytes,
     rawAfter: raw.afterBytes,
     rawSavedPct: raw.savedPercent,
-    gzBefore,
-    gzAfter,
-    gzSavedPct: pct(gzBefore, gzAfter),
-    brBefore,
-    brAfter,
-    brSavedPct: pct(brBefore, brAfter),
+    gzBefore: gz.beforeBytes,
+    gzAfter: gz.afterBytes,
+    gzSavedPct: gz.savedPercent,
+    brBefore: br.beforeBytes,
+    brAfter: br.afterBytes,
+    brSavedPct: br.savedPercent,
   };
 }

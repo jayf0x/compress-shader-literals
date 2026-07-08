@@ -8,6 +8,7 @@
  *
  * Output: tests/chunks.dump.txt (gitignored)
  */
+import { diff, snap } from 'byte-snap';
 import { writeFileSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -16,17 +17,16 @@ import { METHODS, collectShaders } from './utils.js';
 
 const here = dirname(fileURLToPath(import.meta.url));
 const SEP = '\n' + '='.repeat(80) + '\n';
-const pct = (b, a) => (b === 0 ? 0 : ((b - a) / b) * 100).toFixed(1);
 
 const chunks = collectShaders().map(({ pkg, file, src }, index) => {
-  const before = Buffer.byteLength(src);
-  const lines = [`index: ${index}`, `package: ${pkg}`, `source: ${file}`, `original: ${before} B`];
+  const before = snap.text(src);
+  const lines = [`index: ${index}`, `package: ${pkg}`, `source: ${file}`, `original: ${before.bytes.total} B`];
   // one summary line per method, then the outputs
   const outputs = [];
   for (const [name, transform] of METHODS) {
     const out = transform(src);
-    const after = Buffer.byteLength(out);
-    lines.push(`${name}: ${after} B (saved ${pct(before, after)}%)`);
+    const { afterBytes, savedPercent } = diff(before, snap.text(out)).json();
+    lines.push(`${name}: ${afterBytes} B (saved ${savedPercent.toFixed(1)}%)`);
     outputs.push(`--- ${name} ---`, out, '');
   }
   return [...lines, '', '--- original ---', src, '', ...outputs].join('\n');

@@ -6,6 +6,7 @@
  *
  * Add more packages to PACKAGES — each one `bun add`ed here — to grow the stats.
  */
+import { diff, snap } from 'byte-snap';
 import { execFileSync } from 'node:child_process';
 import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
@@ -64,12 +65,13 @@ function benchPackage(pkg) {
   return { pkg, count, before, after };
 }
 
-const bytes = (r) =>
-  r.before === 0 ? 0 : (Buffer.byteLength(r.before) - Buffer.byteLength(r.after)) / Buffer.byteLength(r.before);
+// Raw bytes-saved (byte-snap) per package, up front — it drives both the sort
+// and the table, so compute it once per row instead of re-measuring later.
 const rows = packages()
   .map(benchPackage)
   .filter(Boolean)
-  .sort((a, b) => bytes(b) - bytes(a)); // best saved% first
+  .map((r) => ({ ...r, raw: diff(snap.text(r.before), snap.text(r.after)).json() }))
+  .sort((a, b) => b.raw.savedPercent - a.raw.savedPercent); // best saved% first
 if (rows.length === 0) {
   console.error('No shaders found. Did you `bun add` the packages in tests/?');
   process.exit(1);
@@ -82,35 +84,33 @@ if (rows.length === 0) {
 // pay for a number nobody needs.
 const BROTLI_SAMPLE = 5;
 for (const r of rows.slice(0, BROTLI_SAMPLE)) {
-  r.brBefore = brotliCompressSync(r.before).length;
-  r.brAfter = brotliCompressSync(r.after).length;
+  r.brotli = diff(snap.buffer(brotliCompressSync(r.before)), snap.buffer(brotliCompressSync(r.after))).json();
 }
 
-const pct = (b, a) => (b === 0 ? 0 : ((b - a) / b) * 100).toFixed(1);
-const signed = (b, a) => {
-  const p = pct(b, a);
-  return p >= 0 ? `+${p}` : p;
-};
-const tBefore = rows.reduce((s, r) => s + Buffer.byteLength(r.before), 0);
-const tAfter = rows.reduce((s, r) => s + Buffer.byteLength(r.after), 0);
+const pct = (n) => n.toFixed(1);
+const signed = (n) => (n >= 0 ? `+${pct(n)}` : pct(n));
 const tCount = rows.reduce((s, r) => s + r.count, 0);
+// Sum of the already-computed per-row byte-snap stats — same totals a
+// snap.text() over the whole corpus would give, without re-scanning it.
+const total = diff(
+  { bytes: { total: rows.reduce((s, r) => s + r.raw.beforeBytes, 0) }, files: tCount },
+  { bytes: { total: rows.reduce((s, r) => s + r.raw.afterBytes, 0) }, files: tCount }
+).json();
 
 const header = '| Package | Shaders | Before | After | Saved | Net after Brotli |';
 const sep = '| ------- | ------: | -----: | ----: | ----: | ---------------: |';
-const line = (name, count, b, a, brNet) =>
-  `| ${name} | ${count} | ${b.toLocaleString()} B | ${a.toLocaleString()} B | **${pct(b, a)}%** | ${brNet} |`;
+const line = (name, count, b, a, savedPct, brNet) =>
+  `| ${name} | ${count} | ${b.toLocaleString()} B | ${a.toLocaleString()} B | **${pct(savedPct)}%** | ${brNet} |`;
 const body = rows.map((r) => {
-  const b = Buffer.byteLength(r.before);
-  const a = Buffer.byteLength(r.after);
-  const brNet = r.brBefore === undefined ? '—' : `${signed(r.brBefore, r.brAfter)}%`;
-  return line(`\`${r.pkg}\``, r.count, b, a, brNet);
+  const brNet = r.brotli === undefined ? '—' : `${signed(r.brotli.savedPercent)}%`;
+  return line(`\`${r.pkg}\``, r.count, r.raw.beforeBytes, r.raw.afterBytes, r.raw.savedPercent, brNet);
 });
-const total = line('**Total**', tCount, tBefore, tAfter, '—');
-const table = [header, sep, ...body, total].join('\n');
+const totalLine = line('**Total**', tCount, total.beforeBytes, total.afterBytes, total.savedPercent, '—');
+const table = [header, sep, ...body, totalLine].join('\n');
 
 console.log(`\nReal-world shader compression (engine: minifyShader)\n`);
 console.log(table);
-console.log(`\n→ ${tCount} shaders across ${rows.length} package(s): ${pct(tBefore, tAfter)}% smaller\n`);
+console.log(`\n→ ${tCount} shaders across ${rows.length} package(s): ${pct(total.savedPercent)}% smaller\n`);
 console.log(`(Net after Brotli shown for the top ${BROTLI_SAMPLE} packages only — the rest are "—")\n`);
 
 // Validation gate: minify must not break a shader that parsed before.
