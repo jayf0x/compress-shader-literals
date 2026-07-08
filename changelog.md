@@ -1,5 +1,9 @@
 # Changelog
 
+## v1.3.2
+
+- Validate WGSL shaders with a real parser
+
 ## v1.3.1
 
 - Internal/infrastructure changes only
