@@ -15,7 +15,7 @@ A tiny build-time minifier for GLSL & WGSL shaders written as template literals 
 
 ## Install
 
-[![NPM](https://nodei.co/npm/compress-shader-literals.png)](https://www.npmjs.com/package/compress-shader-literals)
+<!-- [![NPM](https://nodei.co/npm/compress-shader-literals.png)](https://www.npmjs.com/package/compress-shader-literals) -->
 
 ```sh
 bun add -d compress-shader-literals
