@@ -1,5 +1,9 @@
 # Changelog
 
+## v1.3.3
+
+- Parallelize package scanning with worker threads
+
 ## v1.3.2
 
 - Validate WGSL shaders with a real parser
