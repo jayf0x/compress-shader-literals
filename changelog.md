@@ -1,5 +1,9 @@
 # Changelog
 
+## v1.3.5
+
+- Internal/infrastructure changes only
+
 ## v1.3.3
 
 - Parallelize package scanning with worker threads
