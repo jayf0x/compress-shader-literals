@@ -24,7 +24,8 @@ Intent: stay tiny and boring. This is a one-job tool. Resist scope creep.
 | `tests/run-test.js`      | Manual demo (`node tests/run-test.js`)                                                                                                      |
 | `tests/dump-chunks.js`   | Local-only: dumps each shader + every `METHODS` output (with byte savings) to gitignored `chunks.dump.txt`                                  |
 | `tests/experimental.js`  | Local-only pre-release suite (`bun run tests:next`): every `utils.js` `METHODS` transform measured + validity-gated vs the shipped baseline |
-| `tests/e2e.js`           | Benchmarks real npm packages → injects README stats table; GLSL + WGSL validity gate                                                        |
+| `tests/e2e.js`           | Benchmarks real npm packages → injects README stats table; GLSL + WGSL validity gate; scans packages in parallel via `tests/e2e-worker.js`  |
+| `tests/e2e-worker.js`    | One package's scan (worker-thread body for `tests/e2e.js`)                                                                                  |
 | `tests/validate.js`      | Asserts benchmarked packages still load                                                                                                     |
 | `docs/stats.md`          | Explains how the README stats are measured (method only, no live numbers)                                                                   |
 | `backlog.md`             | Next-up work items, each pointing at the files to read first                                                                                |

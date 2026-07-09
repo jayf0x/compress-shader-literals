@@ -9,17 +9,50 @@
 import { diff, snap } from 'byte-snap';
 import { execFileSync } from 'node:child_process';
 import { existsSync, readFileSync, writeFileSync } from 'node:fs';
+import { cpus } from 'node:os';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { Worker } from 'node:worker_threads';
 import { brotliCompressSync } from 'node:zlib';
 
-import { minifyShader } from '../src/core.js';
-import { isWGSL, jsFiles, packages, shadersInCode, validateGlsl } from './utils.js';
+import { packages } from './utils.js';
 
 const here = dirname(fileURLToPath(import.meta.url));
 
 // Validate the benchmarked libraries actually load before trusting their stats.
 execFileSync('node', [resolve(here, 'validate.js')], { stdio: 'inherit' });
+
+// Each package's scan (walk its files, extract shaders, minify, validate) is
+// independent — no shared state — so it's fanned out to a worker per package,
+// a handful in flight at a time. That's what actually made this benchmark slow:
+// a full Babel parse/traverse over every file a big installed tree ships, not
+// the validate.js load-check above (~1.5s) or anything measured here.
+function scanPackage(pkg, root) {
+  return new Promise((res, rej) => {
+    const worker = new Worker(resolve(here, 'e2e-worker.js'), { workerData: { pkg, root } });
+    worker.once('message', (result) => {
+      worker.terminate();
+      res(result);
+    });
+    worker.once('error', rej);
+  });
+}
+
+async function benchAll(pkgs) {
+  const queue = pkgs.filter((pkg) => existsSync(resolve(here, 'node_modules', pkg)));
+  const results = [];
+  async function drain() {
+    let pkg;
+    while ((pkg = queue.shift()) !== undefined) {
+      const result = await scanPackage(pkg, resolve(here, 'node_modules', pkg));
+      if (result) results.push(result);
+    }
+  }
+  await Promise.all(Array.from({ length: Math.min(cpus().length, queue.length) }, drain));
+  return results;
+}
+
+const scanned = await benchAll(packages());
 
 // Proof the minifier preserves meaning: every shader that parses before minify
 // (GLSL via @shaderfrog/glsl-parser, WGSL via wgsl_reflect) must still parse
@@ -28,48 +61,17 @@ execFileSync('node', [resolve(here, 'validate.js')], { stdio: 'inherit' });
 // macro-laden WGSL like Babylon.js's `#ifdef`-guarded shaders) are out of scope
 // — counted as skipped, not validated.
 const validation = { ok: 0, okWgsl: 0, broken: 0, fragments: 0, broke: [] };
-function validate(pkg, before, after) {
-  switch (validateGlsl(before, after)) {
-    case 'ok':
-      validation.ok++;
-      if (isWGSL(before)) validation.okWgsl++;
-      break;
-    case 'broken':
-      validation.broken++;
-      validation.broke.push(pkg);
-      break;
-    case 'fragment':
-      validation.fragments++;
-      break;
-  }
-}
-
-function benchPackage(pkg) {
-  const root = resolve(here, 'node_modules', pkg);
-  if (!existsSync(root)) return null;
-  // Keep the raw text around (not just byte counts) so the top packages can
-  // also be brotli-compressed as one blob further down — what actually ships.
-  let before = '';
-  let after = '';
-  let count = 0;
-  for (const file of jsFiles(root)) {
-    for (const shader of shadersInCode(readFileSync(file, 'utf8'))) {
-      const min = minifyShader(shader);
-      before += shader;
-      after += min;
-      count++;
-      validate(pkg, shader, min);
-    }
-  }
-  if (!count) return null;
-  return { pkg, count, before, after };
+for (const { validation: v } of scanned) {
+  validation.ok += v.ok;
+  validation.okWgsl += v.okWgsl;
+  validation.broken += v.broken;
+  validation.fragments += v.fragments;
+  validation.broke.push(...v.broke);
 }
 
 // Raw bytes-saved (byte-snap) per package, up front — it drives both the sort
 // and the table, so compute it once per row instead of re-measuring later.
-const rows = packages()
-  .map(benchPackage)
-  .filter(Boolean)
+const rows = scanned
   .map((r) => ({ ...r, raw: diff(snap.text(r.before), snap.text(r.after)).json() }))
   .sort((a, b) => b.raw.savedPercent - a.raw.savedPercent); // best saved% first
 if (rows.length === 0) {
