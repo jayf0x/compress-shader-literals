@@ -11,7 +11,7 @@
 
 A tiny build-time minifier for GLSL & WGSL shaders written as template literals in your JS/TS. Strips comments + whitespace — any bundler, no renaming, no toolchain, no runtime cost.
 
-![Alt Preview](./assets/preview.gif)
+![Alt Preview](./assets/preview.png)
 
 ## Install
 
