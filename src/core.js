@@ -86,6 +86,15 @@ export const extractShaderLiterals = (code, tags = DEFAULT_TAGS) => {
 // (newline-sensitive); everything else is `;`-terminated, so joining is safe.
 // No identifier renaming / operator-space removal — that's heavyweight-minifier
 // territory that risks breaking shaders; we stay the light, compatible layer.
+//
+// Deliberately regex/line-based, not a tokenizer. Tried `glsl-tokenizer` +
+// `glsl-token-whitespace-trim` (the stackgl prior art) against the real corpus:
+// ~1pp more raw savings, ~0 net after brotli, but it broke 8 real shaders in
+// deck.gl/luma.gl — their glslify output starts with a lone `\` on its own
+// line, and the token library collapses the run after it into `\ `, destroying
+// the continuation this line pass preserves on purpose. Not a version gap —
+// tokenizing has no concept of "this whitespace is significant". Don't swap
+// this for a tokenizer without a corpus run proving it doesn't regress that.
 export const minifyShader = (src) => {
   const lines = src
     .replace(RE_CRLF, '\n')

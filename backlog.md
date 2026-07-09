@@ -30,18 +30,6 @@ task: when a shader is confidently GLSL (not `isWGSL`), also trim around `=` (an
 
 goal: recover the GLSL `=` bytes without reintroducing the WGSL `>=` welding.
 
-## Replace hand-rolled regexes with a parser/library
-
-files: `src/core.js` (`minifyShader` — comment + whitespace regexes), `src/defaults.js` (`tagCommentRe`), `tests/experimental.js` (candidate + gate)
-
-task: needs research first. `minifyShader` strips comments with regexes (`/\/\*...\*\//`, `/\/\/.*$/`) and does whitespace/newline handling as a hand-rolled line pass — brittle and hard to reason about. Evaluate replacing them:
-
-- **Comment stripping:** `extract-comments` / `strip-comments` are options, but they're tuned for JS (string- and regex-literal-aware) — GLSL has no string literals, so the extra machinery buys little and adds a dependency. Confirm whether they even improve correctness over the current regex before adopting.
-- **The real debt is the whitespace/newline pass** (statement joining, `#`-directive and `\`-continuation handling), which no comment library touches. Going properly regex-free there means tokenizing GLSL — `@shaderfrog/glsl-parser` is already a `tests/`-only dep and could lex → re-emit. That's the heavier, more correct path; weigh it against "stay tiny and boring" (AGENTS.md) and the fact that a tokenizer is WGSL-blind.
-- **Prior art:** `glsl-tokenizer` + `glsl-token-whitespace-trim` (~800k downloads) is the proven token-based reference — it's where the delimiter-trim trick came from. It's GLSL-only (hence WGSL-blind, and it trims around `=` unsafely for our WGSL needs). Study it before rebuilding a tokenizer path; it shows both the technique and its dialect ceiling.
-
-goal: decide, with a prototype in `tests/experimental.js` measured against the current output, whether dropping the hand-rolled passes is a net win (fewer edge-case bugs) or just a heavier dependency for the same result. Don't add a parser to `src` runtime deps unless it demonstrably prevents a real corruption the current code misses.
-
 ## Comparison / relevance stats vs other minifiers
 
 files: `tests/e2e.js`, `docs/stats.md`, README stats block, plus this session's research notes (see `laurentlb/shader-minifier`, https://www.ctrl-alt-test.fr/glsl-minifier/)
