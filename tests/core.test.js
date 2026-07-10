@@ -1,6 +1,6 @@
 import { expect, test } from 'bun:test';
 
-import { extractShaderLiterals, minifyShader } from '../src/core.js';
+import { extractShaderLiterals, extractShaderLiteralsLoose, minifyShader } from '../src/core.js';
 
 test('minifyShader strips comments and collapses whitespace', () => {
   const src = `
@@ -85,4 +85,49 @@ test('minifyShader preserves \\ line-continuations (multiline #define)', () => {
   // Every backslash must stay immediately before a newline, or the macro breaks.
   expect(out).not.toMatch(/\\(?!\n)/);
   expect(out).toBe('#define SUM(a,b) \\\n((a) + \\\n(b))\nvoid main(){}');
+});
+
+test('extractShaderLiteralsLoose finds tagged templates in non-JS source', () => {
+  // Svelte-style: a <script> block Babel can't parse as a whole file.
+  const code = '<script>\nconst frag = glsl`void main() { gl_FragColor = vec4(1.0); }`;\n</script>\n<div/>';
+  const lits = extractShaderLiteralsLoose(code, ['glsl']);
+  expect(lits).toHaveLength(1);
+  expect(lits[0].tag).toBe('glsl');
+  expect(lits[0].value).toContain('void main()');
+});
+
+test('extractShaderLiteralsLoose positions span the whole literal, backticks included', () => {
+  // Matches extractShaderLiterals' AST node positions — plugin.js re-wraps
+  // `value` in backticks itself, so start/end must include the originals too.
+  const code = 'const v = glsl`void main() {}`';
+  const [lit] = extractShaderLiteralsLoose(code, ['glsl']);
+  expect(code.slice(lit.start, lit.end)).toBe('`void main() {}`');
+  expect(lit).toEqual(extractShaderLiterals(code, ['glsl'])[0]);
+});
+
+test('extractShaderLiteralsLoose finds comment-prefixed templates', () => {
+  const code = 'const v = /* wgsl */ `fn main() {}`;';
+  const lits = extractShaderLiteralsLoose(code);
+  expect(lits).toHaveLength(1);
+  expect(lits[0].tag).toBe('wgsl');
+});
+
+test('extractShaderLiteralsLoose skips a tagged template with no shader content', () => {
+  // No AST to confirm this is a real tagged template, so SHADER_SIGNAL is the
+  // only gate — a `glsl`...`` that isn't recognizably a shader is left alone.
+  const code = 'const s = shader`just a random string`;';
+  expect(extractShaderLiteralsLoose(code)).toHaveLength(0);
+});
+
+test('extractShaderLiteralsLoose skips interpolated templates', () => {
+  const code = 'const v = glsl`vec3 c = ${myColor}; void main() {}`;';
+  expect(extractShaderLiteralsLoose(code, ['glsl'])).toHaveLength(0);
+});
+
+test('extractShaderLiteralsLoose finds multiple literals in one file', () => {
+  const code = [
+    'const a = glsl`void main() { gl_FragColor = vec4(1.0); }`;',
+    'const b = wgsl`fn main() -> @location(0) vec4f { return vec4f(1.0); }`;',
+  ].join('\n');
+  expect(extractShaderLiteralsLoose(code)).toHaveLength(2);
 });

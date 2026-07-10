@@ -6,6 +6,14 @@ type FilterPattern = string | RegExp | ReadonlyArray<string | RegExp> | null;
 export interface CompressShaderLiteralsOptions {
   /** Tag names / comment markers to match. Default: `['glsl', 'wgsl', 'shader']` */
   tags?: string[];
+  /**
+   * Extraction method. `'ast'` parses the whole file with Babel (JS/TS only).
+   * `'loose'` finds the same tagged/comment-prefixed literal shapes by regex
+   * instead, for files Babel can't parse — point `include` at them yourself.
+   * No whole-file parse means no syntax guarantee; only a match confirmed by a
+   * shader-content check is touched. Default: `'ast'`
+   */
+  scan?: 'ast' | 'loose';
   /** Files to process. Default: `[/\.[mc]?[jt]sx?$/]` (the JS/TS family Babel can parse). */
   include?: FilterPattern;
   /** Files to skip. Default: `[/node_modules/, /dist/]` */
@@ -36,6 +44,9 @@ export declare const compressShaderLiterals: UnpluginInstance<CompressShaderLite
 
 /** Find tagged (`glsl\`...\``) and comment-prefixed (`/* wgsl *\/ \`...\``) shader literals in source. */
 export declare function extractShaderLiterals(code: string, tags?: string[]): ShaderLiteral[];
+
+/** Same as `extractShaderLiterals`, but by regex instead of a Babel parse — for source Babel can't parse. */
+export declare function extractShaderLiteralsLoose(code: string, tags?: string[]): ShaderLiteral[];
 
 /** Strip comments and collapse whitespace in a shader source string. */
 export declare function minifyShader(src: string): string;

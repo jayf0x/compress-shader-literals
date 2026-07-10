@@ -42,3 +42,19 @@ test('default include covers .mjs/.cjs/.mts, skips non-JS containers', () => {
     expect(plugin.transform(withShader, id)).toBeNull();
   }
 });
+
+// scan: 'loose' reaches a file Babel can't parse as a whole (a Svelte-style
+// <script> block mixed with markup) — the AST path returns nothing here.
+test('scan: "loose" minifies shaders in non-JS-parseable source', () => {
+  const svelteLike =
+    '<script>\nconst frag = glsl`\n  // tonemap\n  void main() { gl_FragColor = vec4(1.0); }\n`;\n</script>\n<div/>';
+
+  const astPlugin = compressShaderLiterals.raw({ include: [/\.svelte$/] });
+  expect(astPlugin.transform(svelteLike, 'App.svelte')).toBeNull();
+
+  const loosePlugin = compressShaderLiterals.raw({ scan: 'loose', include: [/\.svelte$/] });
+  const out = loosePlugin.transform(svelteLike, 'App.svelte');
+  expect(out).not.toBeNull();
+  expect(out.code).not.toContain('// tonemap');
+  expect(out.code).toContain('glsl`void main(){gl_FragColor = vec4(1.0);}`');
+});

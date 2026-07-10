@@ -8,6 +8,7 @@ import {
   RE_DELIM_WS,
   RE_INLINE_WS,
   RE_LINE_COMMENT,
+  SHADER_SIGNAL,
   tagCommentRe,
 } from './defaults.js';
 
@@ -75,6 +76,44 @@ export const extractShaderLiterals = (code, tags = DEFAULT_TAGS) => {
     // Source we don't parse (exotic syntax, partial files) has no literals to
     // extract — skip it. A non-syntax failure is our bug, so let it surface.
     if (err.name !== 'SyntaxError') throw err;
+  }
+
+  return literals;
+};
+
+// Finds the same two literal shapes as extractShaderLiterals (tagged and
+// comment-prefixed templates) by regex instead of a whole-file Babel parse —
+// for files Babel can't parse at all (anything that isn't plain JS/TS). No AST
+// means no guarantee a match is really a tagged template and not, say, a
+// coincidental "glsl`" inside a string; SHADER_SIGNAL is the one check this
+// mode has to confirm a candidate before touching it. Opt in via `scan: 'loose'`.
+const closingBacktick = (code, from) => {
+  for (let i = from; i < code.length; i++) {
+    if (code[i] === '\\') i++;
+    else if (code[i] === '`') return i;
+  }
+  return -1;
+};
+
+export const extractShaderLiteralsLoose = (code, tags = DEFAULT_TAGS) => {
+  const tagAlt = tags.map((t) => t.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('|');
+  const openRe = new RegExp(`\\b(${tagAlt})\\s*\`|/\\*\\s*(${tagAlt})\\s*\\*/\\s*\``, 'g');
+  const literals = [];
+
+  let m;
+  while ((m = openRe.exec(code))) {
+    // m[0] ends in the opening backtick — literal.start/end span the whole
+    // template literal (backticks included), matching extractShaderLiterals'
+    // AST node positions, since plugin.js re-wraps `value` in backticks itself.
+    const contentStart = m.index + m[0].length;
+    const close = closingBacktick(code, contentStart);
+    if (close === -1) continue;
+
+    const value = code.slice(contentStart, close);
+    if (!value.includes('${') && SHADER_SIGNAL.test(value)) {
+      literals.push({ tag: m[1] ?? m[2], value, start: contentStart - 1, end: close + 1 });
+    }
+    openRe.lastIndex = close + 1;
   }
 
   return literals;

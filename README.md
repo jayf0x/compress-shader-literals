@@ -57,22 +57,32 @@ const frag = /* wgsl */ `
 
 **Options**
 
-| Option        | Default                      | Description                                         |
-| ------------- | ---------------------------- | --------------------------------------------------- |
-| `tags`        | `['glsl', 'wgsl', 'shader']` | Tag names / comment markers to match                |
-| `include`     | `[/\.[mc]?[jt]sx?$/]`        | Files to process — the JS/TS family Babel can parse |
-| `exclude`     | `[/node_modules/, /dist/]`   | Files to skip — dependencies are skipped by default |
-| `outputRatio` | `false`                      | Print a bytes-saved summary after build             |
-| `transform`   | built-in `minifyShader`      | Custom minifier — `(shader: string) => string`      |
-| `debug`       | `false`                      | Log each file's discovered literals to the console  |
+| Option        | Default                      | Description                                                                |
+| ------------- | ---------------------------- | -------------------------------------------------------------------------- |
+| `tags`        | `['glsl', 'wgsl', 'shader']` | Tag names / comment markers to match                                       |
+| `scan`        | `'ast'`                      | `'ast'` parses the file with Babel; `'loose'` matches by regex — see below |
+| `include`     | `[/\.[mc]?[jt]sx?$/]`        | Files to process — the JS/TS family Babel can parse                        |
+| `exclude`     | `[/node_modules/, /dist/]`   | Files to skip — dependencies are skipped by default                        |
+| `outputRatio` | `false`                      | Print a bytes-saved summary after build                                    |
+| `transform`   | built-in `minifyShader`      | Custom minifier — `(shader: string) => string`                             |
+| `debug`       | `false`                      | Log each file's discovered literals to the console                         |
 
-**Programmatic API** — the two core helpers are exported for tooling authors (validators, ESLint rules, CLIs), no plugin required:
+**`scan: 'loose'`** — for files Babel can't parse (anything that isn't plain JS/TS: Svelte components, Astro components, etc). Instead of a whole-file AST parse, it matches the same tagged/comment-prefixed literal shapes by regex. Opt in and point `include` at the files yourself — there's no whole-file syntax guarantee, so a match is only touched once its content also looks like a real shader:
 
 ```js
-import { extractShaderLiterals, minifyShader } from 'compress-shader-literals';
+compressShaderLiterals.vite({ scan: 'loose', include: [/\.svelte$/] });
+```
+
+**Programmatic API** — the core helpers are exported for tooling authors (validators, ESLint rules, CLIs), no plugin required:
+
+```js
+import { extractShaderLiterals, extractShaderLiteralsLoose, minifyShader } from 'compress-shader-literals';
 
 extractShaderLiterals('const v = glsl`void main() {}`');
-// → [{ tag: 'glsl', value: 'void main() {}', start: 10, end: 26 }]
+// → [{ tag: 'glsl', value: 'void main() {}', start: 14, end: 30 }]
+
+extractShaderLiteralsLoose('<script>const v = glsl`void main() {}`</script>');
+// → same shape, found by regex instead of a Babel parse
 
 minifyShader('// comment\nvoid  main() {}'); // → 'void main() {}'
 ```
@@ -113,7 +123,7 @@ _3323 shaders · 2477/3323 parseable shaders (GLSL + WGSL) verified valid after 
 
 ## How it works
 
-1. Parses each matched file with Babel — `.js`, `.jsx`, `.ts`, `.tsx`, `.mjs`, `.cjs`, `.mts`, `.cts` (not `.vue`/`.svelte`/`.glsl`, which aren't whole-file JS).
+1. Parses each matched file with Babel — `.js`, `.jsx`, `.ts`, `.tsx`, `.mjs`, `.cjs`, `.mts`, `.cts` by default. `scan: 'loose'` skips the parse and matches by regex instead, for files Babel can't parse.
 2. Finds tagged (`` glsl`…` ``) and comment-prefixed (`/* glsl */ \`…\``) literals, skipping any with `${…}` interpolation.
 3. Strips comments, collapses whitespace, and joins statements onto one line — keeping real newlines around `#` preprocessor directives and `\` line-continuations (which are newline-sensitive). Whitespace hugging a delimiter (`( ) { } ; ,`) is removed entirely; whitespace around operators (and `=`, to stay WGSL-generic-safe) is preserved, so adjacent tokens never merge.
 4. Rewrites the literal in place with [magic-string](https://github.com/Rich-Harris/magic-string), so sourcemaps stay intact.

@@ -2,16 +2,6 @@
 
 Each item points at the files to read first. Research before building.
 
-## "Loose" scan mode — reach any file type
-
-files: `src/plugin.js` (filter + transform), `src/defaults.js` (`DEFAULT_INCLUDE`), `src/core.js` (`extractShaderLiterals`)
-
-task: add an opt-in `scan: 'loose'` option that finds tagged and comment-prefixed shader literals by regex across any file, bypassing the whole-file Babel parse. Babel is JS/TS-only, so today `.vue` / `.svelte` / `.astro` / `.glsl` files yield nothing even if included. Keep the current Babel path (`scan: 'ast'`) as the default.
-
-goal: minify shaders living in SFCs and non-JS containers without corrupting non-shader files. Gate every loose match by a content signal before stripping (reuse `SHADER_SIGNAL` in `tests/utils.js`) — the regex finds candidates, the signal confirms they're shaders.
-
-test target: `lygia` is a good showcase — it ships raw `.glsl`/`.wgsl`/`.wesl` files (and stores shaders as plain string properties in a `weslBundle`, not template literals), so the current AST scanner extracts 0 from it. A loose/file scanner would reach it. Note two blockers: its shaders are mostly `#include`-style fragments (won't pass `SHADER_SIGNAL`, which wants a full-shader marker like `void main`), and it exposes no bare import, so `validate.js` can't load it — a loose-scan benchmark would need a file-based corpus path, not the `dependencies` + import route.
-
 ## Extend shader validation — opt-in build-time validation
 
 files: `src/plugin.js`, `tests/utils.js` (`validateGlsl`)
@@ -49,4 +39,4 @@ why: the corpus is npm packages that ship shaders as JS template literals — bu
 - examples directories
 - CDN snippets (Hydra, ShaderToy, etc.)
 
-goal: broaden the corpus so the stats and validity gate reflect real usage, not just npm. Pairs with "Loose scan mode" above — both need a file-based corpus path, not the `dependencies` + import route.
+goal: broaden the corpus so the stats and validity gate reflect real usage, not just npm. Needs a file-based corpus path, not the `dependencies` + import route — same gap `scan: 'loose'` benchmarking would hit (raw `.glsl`/`.wesl` files, e.g. `lygia`, aren't reachable via npm `import()` and are mostly `#include`-style fragments that won't pass `SHADER_SIGNAL` anyway).

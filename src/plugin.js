@@ -3,17 +3,18 @@ import { diff, snap } from 'byte-snap';
 import MagicString from 'magic-string';
 import { createUnplugin } from 'unplugin';
 
-import { extractShaderLiterals, minifyShader } from './core.js';
+import { extractShaderLiterals, extractShaderLiteralsLoose, minifyShader } from './core.js';
 import { DEFAULT_EXCLUDE, DEFAULT_INCLUDE, DEFAULT_TAGS } from './defaults.js';
 
 // plugin.js is the build entry (index.js tree-shakes to nothing under
 // sideEffects:false), so re-export the public core API here too — keeps dist's
 // runtime exports matching index.d.ts.
-export { extractShaderLiterals, minifyShader } from './core.js';
+export { extractShaderLiterals, extractShaderLiteralsLoose, minifyShader } from './core.js';
 
 export const compressShaderLiterals = createUnplugin((options = {}) => {
   const tags = options.tags || DEFAULT_TAGS;
   const minify = options.transform || minifyShader;
+  const extract = options.scan === 'loose' ? extractShaderLiteralsLoose : extractShaderLiterals;
   const filter = createFilter(options.include || DEFAULT_INCLUDE, options.exclude || DEFAULT_EXCLUDE);
 
   // Accumulate the shader source before/after so byte-snap can report the diff.
@@ -29,7 +30,7 @@ export const compressShaderLiterals = createUnplugin((options = {}) => {
       if (!filter(id)) return null;
       if (!tags.some((tag) => code.includes(tag))) return null;
 
-      const literals = extractShaderLiterals(code, tags);
+      const literals = extract(code, tags);
       if (literals.length === 0) return null;
 
       if (options.debug) {
