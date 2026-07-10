@@ -1,5 +1,9 @@
 # Changelog
 
+## v1.3.6
+
+- Add scan: 'loose' regex-based extraction for non-JS-parseable files
+
 ## v1.3.5
 
 - Internal/infrastructure changes only
