@@ -1,5 +1,10 @@
 # Changelog
 
+## v1.3.7
+
+- Add dialect-aware equals sign trimming for WGSL
+- Add plugin-include and taglify support, move brotli-check to e2e worker
+
 ## v1.3.6
 
 - Add scan: 'loose' regex-based extraction for non-JS-parseable files
