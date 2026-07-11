@@ -85,7 +85,7 @@ Instructions:
 bun run format
 
 # ── commit + tag + push (GHA workflow handles npm publish) ────────────────────
-git add package.json bun.lock README.md changelog.md tests/bun.lock
+git add .
 git commit -m "chore: release $NEW"
 git tag "$TAG"
 git push origin HEAD

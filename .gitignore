@@ -3,6 +3,7 @@ dist
 build
 .DS_Store
 tests/*.dump.txt
+tests/.cache
 
 dev
 about-user.md

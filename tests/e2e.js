@@ -8,7 +8,8 @@
  */
 import { diff, snap } from 'byte-snap';
 import { execFileSync } from 'node:child_process';
-import { existsSync, readFileSync, writeFileSync } from 'node:fs';
+import { createHash } from 'node:crypto';
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { cpus } from 'node:os';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -21,6 +22,29 @@ const here = dirname(fileURLToPath(import.meta.url));
 
 // Validate the benchmarked libraries actually load before trusting their stats.
 execFileSync('node', [resolve(here, 'validate.js')], { stdio: 'inherit' });
+
+// A package's scan is pure: same installed version + same scan/minify logic
+// always produces the same result. Cache it on disk so re-runs (dev
+// iterating on the table/README) skip re-parsing every file of packages that
+// haven't changed. Keyed on the installed version *and* a hash of the files
+// that drive the scan, so bumping a dependency or editing minifyShader
+// invalidates exactly the entries it affects — stale entries are just never
+// read again, no eviction needed for a gitignored local cache.
+const cacheDir = resolve(here, '.cache');
+const logicHash = createHash('sha1')
+  .update(
+    ['../src/core.js', '../src/defaults.js', 'utils.js', 'e2e-worker.js']
+      .map((f) => readFileSync(resolve(here, f), 'utf8'))
+      .join('\0')
+  )
+  .digest('hex')
+  .slice(0, 12);
+
+function cacheFile(pkg, root) {
+  const { version } = JSON.parse(readFileSync(resolve(root, 'package.json'), 'utf8'));
+  const safe = pkg.replace(/\//g, '__');
+  return resolve(cacheDir, `${safe}@${version}--${logicHash}.json`);
+}
 
 // Each package's scan (walk its files, extract shaders, minify, validate) is
 // independent — no shared state — so it's fanned out to a worker per package,
@@ -43,12 +67,23 @@ async function benchAll(pkgs) {
   const total = queue.length;
   let done = 0;
   const results = [];
+  mkdirSync(cacheDir, { recursive: true });
   async function drain() {
     let pkg;
     while ((pkg = queue.shift()) !== undefined) {
-      const result = await scanPackage(pkg, resolve(here, 'node_modules', pkg));
+      const root = resolve(here, 'node_modules', pkg);
+      const cached = cacheFile(pkg, root);
+      let result;
+      let hit = false;
+      if (existsSync(cached)) {
+        result = JSON.parse(readFileSync(cached, 'utf8'));
+        hit = true;
+      } else {
+        result = await scanPackage(pkg, root);
+        if (result) writeFileSync(cached, JSON.stringify(result));
+      }
       done++;
-      process.stdout.write(`\r  scanning packages: ${done}/${total} (${pkg})${' '.repeat(20)}`);
+      process.stdout.write(`\r  scanning packages: ${done}/${total} (${pkg}${hit ? ', cached' : ''})${' '.repeat(20)}`);
       if (result) results.push(result);
     }
   }
