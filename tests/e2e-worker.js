@@ -2,8 +2,10 @@
  * One package's scan, run off the main thread — see e2e.js. Each package is
  * independent (no shared state) so this is the whole unit of parallelism.
  */
+import { diff, snap } from 'byte-snap';
 import { readFileSync } from 'node:fs';
 import { parentPort, workerData } from 'node:worker_threads';
+import { brotliCompressSync } from 'node:zlib';
 
 import { minifyShader } from '../src/core.js';
 import { isWGSL, jsFiles, shadersInCode, validateGlsl } from './utils.js';
@@ -37,4 +39,13 @@ for (const file of jsFiles(root)) {
   }
 }
 
-parentPort.postMessage(count ? { pkg, count, before, after, validation } : null);
+// Brotli here too, not just raw diff — one package's worth of text at a time,
+// in parallel with every other package's worker, instead of the main thread
+// doing it serially after every package is already back. That parallelism is
+// what makes a full-corpus brotli pass affordable (was previously sampled to
+// the top 5 packages to avoid a slow single-threaded tail).
+const brotli = count
+  ? diff(snap.buffer(brotliCompressSync(before)), snap.buffer(brotliCompressSync(after))).json()
+  : null;
+
+parentPort.postMessage(count ? { pkg, count, before, after, validation, brotli } : null);

@@ -3,9 +3,11 @@ import _traverse from '@babel/traverse';
 
 import {
   DEFAULT_TAGS,
+  isWGSL,
   RE_BLOCK_COMMENT,
   RE_CRLF,
   RE_DELIM_WS,
+  RE_EQ_WS,
   RE_INLINE_WS,
   RE_LINE_COMMENT,
   SHADER_SIGNAL,
@@ -157,11 +159,17 @@ export const minifyShader = (src) => {
   // Second pass: strip whitespace hugging delimiters. Statements are now joined
   // onto single lines, so within a line `\s` is only spaces; `#`/continuation
   // lines (where a space can be significant) are left untouched.
+  const wgsl = isWGSL(out);
   cont = false;
   out = out
     .split('\n')
     .map((line) => {
-      const trimmed = line.startsWith('#') || cont ? line : line.replace(RE_DELIM_WS, '$1');
+      if (line.startsWith('#') || cont) {
+        cont = line.endsWith('\\');
+        return line;
+      }
+      let trimmed = line.replace(RE_DELIM_WS, '$1');
+      if (!wgsl) trimmed = trimmed.replace(RE_EQ_WS, '=');
       cont = line.endsWith('\\');
       return trimmed;
     })

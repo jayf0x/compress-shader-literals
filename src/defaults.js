@@ -48,3 +48,24 @@ export const RE_INLINE_WS = /[ \t]+/g;
  * before `(` is significant (`#define FOO (x)` ≠ `#define FOO(x)`).
  */
 export const RE_DELIM_WS = /\s*([(){};,])\s*/g;
+
+/** WGSL markers — a shader with any of these is WGSL, not GLSL. */
+export const WGSL_SIGNAL = /@vertex|@fragment|@group|var<|@compute/;
+/** True when `src` looks like WGSL (has WGSL markers and no GLSL `main`). */
+export const isWGSL = (src) => WGSL_SIGNAL.test(src) && !/void\s+main/.test(src);
+
+/**
+ * Whitespace hugging a lone `=` — strip it. Only matches when whitespace sits
+ * on *both* immediate sides of the `=`, which is what keeps this digraph-safe:
+ * every compound operator that ends in `=` (`==` `<=` `>=` `!=` `+=` `-=` `*=`
+ * `/=` `%=` `&=` `|=` `^=`) has zero space between its own characters in valid
+ * source, so the char adjacent to `=` is never whitespace there — this pattern
+ * simply never matches inside one. GLSL-only: WGSL pairs this with `<f32>`
+ * generics, where trimming `vec2<f32> = a` welds the generic-close `>` onto
+ * `=` into the `>=` token (see RE_DELIM_WS) — gate this on `!isWGSL(src)`.
+ * The `(?<!>)` lookbehind is a second, syntax-level guard against that exact
+ * case: `isWGSL` is a heuristic (keyword sniffing) and can miss a WGSL
+ * fragment that has no `@vertex`/`@group`/`var<`/etc marker in view, so the
+ * pattern itself never touches a `=` directly after a `>` either way.
+ */
+export const RE_EQ_WS = /(?<!>)\s+=\s+/g;

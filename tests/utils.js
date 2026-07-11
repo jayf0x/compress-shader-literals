@@ -14,7 +14,7 @@ import { brotliCompressSync, gzipSync } from 'node:zlib';
 import { WgslParser } from 'wgsl_reflect/wgsl_reflect.module.js';
 
 import { minifyShader } from '../src/core.js';
-import { RE_BLOCK_COMMENT, RE_CRLF, RE_LINE_COMMENT } from '../src/defaults.js';
+import { isWGSL, RE_BLOCK_COMMENT, RE_CRLF, RE_LINE_COMMENT } from '../src/defaults.js';
 
 const traverse = _traverse.default || _traverse;
 const here = dirname(fileURLToPath(import.meta.url));
@@ -33,13 +33,14 @@ export const METHODS = [['minify (shipped)', minifyShader]];
 
 /** A template-literal body "is a shader" if its text uses GLSL/WGSL keywords. */
 export const SHADER_SIGNAL = /\b(gl_FragColor|gl_Position|void\s+main|precision\s+(highp|mediump|lowp)|fn\s+main)\b/;
-/** WGSL markers — used to route WGSL to the wgsl_reflect parser instead of GLSL's. */
-export const WGSL_SIGNAL = /@vertex|@fragment|@group|var<|@compute/;
 /** JS module files we walk for shader literals. */
 export const JS_FILE = /\.(js|mjs|cjs)$/;
 
-/** True when `src` looks like WGSL (has WGSL markers and no GLSL `main`). */
-export const isWGSL = (src) => WGSL_SIGNAL.test(src) && !/void\s+main/.test(src);
+// isWGSL (used here to route WGSL to the wgsl_reflect parser instead of GLSL's)
+// now lives in src/defaults.js — minifyShader needs it too, to gate the `=`
+// trim pass, so it's the shared source of truth. Re-exported here so existing
+// imports from tests/utils.js keep working.
+export { isWGSL };
 
 /**
  * A backslash that is not immediately followed by a newline. In GLSL a `\` is

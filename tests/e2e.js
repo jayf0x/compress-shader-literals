@@ -13,7 +13,6 @@ import { cpus } from 'node:os';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { Worker } from 'node:worker_threads';
-import { brotliCompressSync } from 'node:zlib';
 
 import { packages } from './utils.js';
 
@@ -40,15 +39,20 @@ function scanPackage(pkg, root) {
 
 async function benchAll(pkgs) {
   const queue = pkgs.filter((pkg) => existsSync(resolve(here, 'node_modules', pkg)));
+  const total = queue.length;
+  let done = 0;
   const results = [];
   async function drain() {
     let pkg;
     while ((pkg = queue.shift()) !== undefined) {
       const result = await scanPackage(pkg, resolve(here, 'node_modules', pkg));
+      done++;
+      process.stdout.write(`\r  scanning packages: ${done}/${total} (${pkg})${' '.repeat(20)}`);
       if (result) results.push(result);
     }
   }
   await Promise.all(Array.from({ length: Math.min(cpus().length, queue.length) }, drain));
+  process.stdout.write('\n');
   return results;
 }
 
@@ -79,16 +83,6 @@ if (rows.length === 0) {
   process.exit(1);
 }
 
-// Brotli-compressing every package's shaders (some are 100s of KB) at Node's
-// default max quality is what actually made this benchmark slow — not the
-// GLSL validation above. We only care whether the top savers still win after
-// compression, so only brotli-check those; leave the rest blank rather than
-// pay for a number nobody needs.
-const BROTLI_SAMPLE = 5;
-for (const r of rows.slice(0, BROTLI_SAMPLE)) {
-  r.brotli = diff(snap.buffer(brotliCompressSync(r.before)), snap.buffer(brotliCompressSync(r.after))).json();
-}
-
 const pct = (n) => n.toFixed(1);
 const signed = (n) => (n >= 0 ? `+${pct(n)}` : pct(n));
 const tCount = rows.reduce((s, r) => s + r.count, 0);
@@ -104,7 +98,7 @@ const sep = '| ------- | ------: | -----: | ----: | ----: | ---------------: |';
 const line = (name, count, b, a, savedPct, brNet) =>
   `| ${name} | ${count} | ${b.toLocaleString()} B | ${a.toLocaleString()} B | **${pct(savedPct)}%** | ${brNet} |`;
 const body = rows.map((r) => {
-  const brNet = r.brotli === undefined ? '—' : `${signed(r.brotli.savedPercent)}%`;
+  const brNet = `${signed(r.brotli.savedPercent)}%`;
   return line(`\`${r.pkg}\``, r.count, r.raw.beforeBytes, r.raw.afterBytes, r.raw.savedPercent, brNet);
 });
 const totalLine = line('**Total**', tCount, total.beforeBytes, total.afterBytes, total.savedPercent, '—');
@@ -113,7 +107,6 @@ const table = [header, sep, ...body, totalLine].join('\n');
 console.log(`\nReal-world shader compression (engine: minifyShader)\n`);
 console.log(table);
 console.log(`\n→ ${tCount} shaders across ${rows.length} package(s): ${pct(total.savedPercent)}% smaller\n`);
-console.log(`(Net after Brotli shown for the top ${BROTLI_SAMPLE} packages only — the rest are "—")\n`);
 
 // Validation gate: minify must not break a shader that parsed before.
 const v = validation;
@@ -128,12 +121,6 @@ if (v.broken > 0) {
   process.exit(1);
 }
 
-// One honest, machine-checked line for the README caption. v.ok/(v.ok + v.broken)
-// would always read N/N — a broken shader aborts the run above before this line
-// runs — so the informative ratio is against the whole corpus (tCount), which
-// shows how much of it is parseable and verified vs. out-of-scope fragments.
-const validityNote = `${v.ok}/${tCount} parseable shaders (GLSL + WGSL) verified valid after minify`;
-
 if (process.argv.includes('--write')) {
   const readme = resolve(here, '..', 'README.md');
   const md = readFileSync(readme, 'utf8');
@@ -144,14 +131,21 @@ if (process.argv.includes('--write')) {
     console.error('No <!-- STATS:START/END --> markers found in README.');
     process.exit(1);
   }
+  // v.ok/(v.ok + v.broken) would always read N/N — a broken shader aborts the
+  // run above before this line runs — so the informative ratio is against the
+  // whole corpus (tCount), which shows how much of it is parseable/verified
+  // vs. out-of-scope fragments.
   const date = new Date().toISOString().slice(0, 10);
-  const caption = `_${tCount} shaders · ${validityNote} · [how this is measured](docs/stats.md) · ${date}_`;
+  const caption = `_${v.ok}/${tCount} parseable shaders. ✅ Verified ${date}. [How this is measured](docs/stats.md)_`;
   const block = `<!-- STATS:START -->\n${table}\n\n${caption}\n<!-- STATS:END -->`;
   const next = md.replace(markers, block);
   if (next === md) {
     console.log('· README stats already up to date');
   } else {
     writeFileSync(readme, next);
+    // Table columns are hand-padded above — pipe it through the project's own
+    // formatter so README stays consistent with `bun run format`.
+    execFileSync(resolve(here, '..', 'node_modules', '.bin', 'prettier'), ['--write', readme]);
     console.log('✓ README stats updated');
   }
 }

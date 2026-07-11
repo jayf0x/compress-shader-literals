@@ -10,15 +10,9 @@ why: `validateGlsl` now parses both dialects for real — `@shaderfrog/glsl-pars
 
 - **Opt-in `validate: true` in the plugin.** Re-parse each shader the plugin touches at build time and warn when one stops parsing, so user shaders outside the benchmark corpus get the same guarantee. Reuse `validateGlsl` (move it, or the parsing it wraps, from `tests/utils.js` into `src/` if this ships — decide whether `wgsl_reflect`/`@shaderfrog/glsl-parser` are worth adding as real runtime deps for an opt-in feature, given "stay tiny and boring").
 
-## Dialect-aware `=` trimming — reclaim the WGSL-blocked bytes
+## ~~Dialect-aware `=` trimming — reclaim the WGSL-blocked bytes~~ (done)
 
-files: `src/core.js` (`minifyShader`), `src/defaults.js` (`RE_DELIM_WS`), `tests/utils.js` (`isWGSL`), `tests/experimental.js`
-
-why: the delimiter pass strips whitespace around `( ) { } ; ,` but deliberately excludes `=`, because in WGSL `vec2<f32> = a` would weld the generic-close `>` onto `=` into a `>=` token. That exclusion is only needed for WGSL — GLSL has no `<>` generics, so stripping around `=` is safe there. Measured this session: adding `=` back took raw savings from ~9.5% to ~10.5% on the (then) corpus — a real ~1% left on the table for GLSL shaders.
-
-task: when a shader is confidently GLSL (not `isWGSL`), also trim around `=` (and `==`/`<=`/`>=`/`!=`/`+=`… must stay intact — only strip a lone `=` with spaces on both sides, never a digraph). Prototype in `tests/experimental.js`, prove 0 broken on the GLSL gate, and confirm WGSL output is untouched. Keep the WGSL-safe path exactly as-is.
-
-goal: recover the GLSL `=` bytes without reintroducing the WGSL `>=` welding.
+Shipped in `src/core.js` (`minifyShader`) / `src/defaults.js` (`RE_EQ_WS`, `isWGSL` moved here from `tests/utils.js`, which now re-exports it). `minifyShader` trims whitespace around a lone `=` whenever `!isWGSL(src)`, and `RE_EQ_WS` itself carries a `(?<!>)` lookbehind as a second, non-heuristic guard against the `>=` welding case — belt-and-suspenders since `isWGSL` is keyword-sniffing and can miss a WGSL fragment with no marker in view. Digraphs (`==`/`<=`/`>=`/`!=`/`+=`…) are naturally untouched: none of them have whitespace between their own characters in valid source, so the "whitespace on both immediate sides" match never fires inside one. Corpus gate (`tests/experimental.js`) run against all 3323 shaders: 0 broken, raw savings up from prior baseline. Regression tests added in `tests/core.test.js`.
 
 ## Comparison / relevance stats vs other minifiers
 

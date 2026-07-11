@@ -56,5 +56,5 @@ test('scan: "loose" minifies shaders in non-JS-parseable source', () => {
   const out = loosePlugin.transform(svelteLike, 'App.svelte');
   expect(out).not.toBeNull();
   expect(out.code).not.toContain('// tonemap');
-  expect(out.code).toContain('glsl`void main(){gl_FragColor = vec4(1.0);}`');
+  expect(out.code).toContain('glsl`void main(){gl_FragColor=vec4(1.0);}`');
 });

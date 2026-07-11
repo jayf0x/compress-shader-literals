@@ -64,10 +64,15 @@ test('minifyShader normalizes CRLF and joins statements onto one line', () => {
   expect(out).toBe('void main(){}void foo(){}');
 });
 
-test('minifyShader strips whitespace around delimiters but not operators', () => {
-  const out = minifyShader('void main ( ) { float x = a + b ; }');
-  // ( ) { } ; tighten; the `=` and `+` operators keep their spaces.
-  expect(out).toBe('void main(){float x = a + b;}');
+test('minifyShader strips whitespace around delimiters, `=`, and GLSL compound assignment operators', () => {
+  const out = minifyShader('void main ( ) { float x = a + b ; x += 1.0 ; }');
+  // ( ) { } ; and lone `=` tighten; `+` (a real operator, unlike `=`) keeps its spaces.
+  expect(out).toBe('void main(){float x=a + b;x += 1.0;}');
+});
+
+test('minifyShader never trims a digraph ending in `=` (== <= >= != += -= etc.)', () => {
+  const src = 'void main(){if(a==b&&c!=d&&e<=f&&g>=h){x+=1;y-=1;z*=1;w/=1;}}';
+  expect(minifyShader(src)).toBe(src);
 });
 
 test('minifyShader leaves WGSL generics intact (no >= welding)', () => {
@@ -77,7 +82,7 @@ test('minifyShader leaves WGSL generics intact (no >= welding)', () => {
 
 test('minifyShader keeps newlines around # preprocessor directives', () => {
   const out = minifyShader('precision highp float;\n#define K 2\nint b = K;');
-  expect(out).toBe('precision highp float;\n#define K 2\nint b = K;');
+  expect(out).toBe('precision highp float;\n#define K 2\nint b=K;');
 });
 
 test('minifyShader preserves \\ line-continuations (multiline #define)', () => {
