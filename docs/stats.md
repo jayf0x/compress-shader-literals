@@ -24,6 +24,10 @@ What actually gets removed by minifying explains the gap. Two very different thi
 
 So a package whose shaders lean comment-heavy (rather than whitespace-heavy) will show a smaller "Saved" number and a larger "Net after Brotli" number — the bytes minifying removed there were "cheap" to strip in plain text but "expensive" to carry through compression. Nothing to worry about; it's just telling you _what kind_ of bytes that package's shaders wasted.
 
+## Why some packages show 0% (or close to it)
+
+A row like `postprocessing` at **0.0%** isn't a bug or a missed shader — every shader in that package is found and run through the minifier, there's just nothing left to remove. Some npm packages only publish their already-built output (a `build/` or `dist/` folder, no `src/`), and that output has usually already been through the shader-embedding tool's own minifier upstream — one statement per line, no comments, no stray indentation. Running our minifier on already-minified source correctly finds nothing to strip. If you want to sanity-check a surprising number, read a raw shader for that package out of `tests/node_modules/<pkg>` — the source itself tells you why.
+
 ## Why real packages, not synthetic ones
 
 Every shader in the benchmark is scraped out of installed npm packages, not hand-written for the demo. That also means it's an engine benchmark, not what the plugin does by default: these libraries don't tag their shaders, and the plugin only touches **tagged** literals unless you widen `include`/`exclude` yourself. See [AGENTS.md](../AGENTS.md) for the tagging rules.

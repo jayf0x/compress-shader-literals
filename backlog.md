@@ -10,10 +10,6 @@ why: `validateGlsl` now parses both dialects for real — `@shaderfrog/glsl-pars
 
 - **Opt-in `validate: true` in the plugin.** Re-parse each shader the plugin touches at build time and warn when one stops parsing, so user shaders outside the benchmark corpus get the same guarantee. Reuse `validateGlsl` (move it, or the parsing it wraps, from `tests/utils.js` into `src/` if this ships — decide whether `wgsl_reflect`/`@shaderfrog/glsl-parser` are worth adding as real runtime deps for an opt-in feature, given "stay tiny and boring").
 
-## ~~Dialect-aware `=` trimming — reclaim the WGSL-blocked bytes~~ (done)
-
-Shipped in `src/core.js` (`minifyShader`) / `src/defaults.js` (`RE_EQ_WS`, `isWGSL` moved here from `tests/utils.js`, which now re-exports it). `minifyShader` trims whitespace around a lone `=` whenever `!isWGSL(src)`, and `RE_EQ_WS` itself carries a `(?<!>)` lookbehind as a second, non-heuristic guard against the `>=` welding case — belt-and-suspenders since `isWGSL` is keyword-sniffing and can miss a WGSL fragment with no marker in view. Digraphs (`==`/`<=`/`>=`/`!=`/`+=`…) are naturally untouched: none of them have whitespace between their own characters in valid source, so the "whitespace on both immediate sides" match never fires inside one. Corpus gate (`tests/experimental.js`) run against all 3323 shaders: 0 broken, raw savings up from prior baseline. Regression tests added in `tests/core.test.js`.
-
 ## Comparison / relevance stats vs other minifiers
 
 files: `tests/e2e.js`, `docs/stats.md`, README stats block, plus this session's research notes (see `laurentlb/shader-minifier`, https://www.ctrl-alt-test.fr/glsl-minifier/)
@@ -34,3 +30,5 @@ why: the corpus is npm packages that ship shaders as JS template literals — bu
 - CDN snippets (Hydra, ShaderToy, etc.)
 
 goal: broaden the corpus so the stats and validity gate reflect real usage, not just npm. Needs a file-based corpus path, not the `dependencies` + import route — same gap `scan: 'loose'` benchmarking would hit (raw `.glsl`/`.wesl` files, e.g. `lygia`, aren't reachable via npm `import()` and are mostly `#include`-style fragments that won't pass `SHADER_SIGNAL` anyway).
+
+note: this is about coverage of shader _sources_ the scanner can reach — it's not the explanation for a package showing 0% saved in the README table. Checked `postprocessing` (**0.0%**) directly: all 136 of its shaders are extracted correctly (matches its real shader count), `minifyShader` runs on every one — there's just nothing left to strip. The npm package ships only its `build/` bundle (no `src/`), which is already pre-minified upstream: one statement per line, no comments, no incidental whitespace. That's an honest, correct 0%, not a detection gap. Worth a one-line callout in `docs/stats.md` if this comes up again, so a low/0% row isn't misread as a bug.

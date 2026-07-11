@@ -14,7 +14,7 @@ import { cpus } from 'node:os';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { Worker } from 'node:worker_threads';
-import { format, resolveConfig } from 'prettier';
+import { taglifyFile } from 'taglify';
 
 import { packages } from './utils.js';
 
@@ -159,32 +159,9 @@ if (v.broken > 0) {
 
 if (process.argv.includes('--write')) {
   const readme = resolve(here, '..', 'README.md');
-  const md = readFileSync(readme, 'utf8');
-  const markers = /<!-- STATS:START -->[\s\S]*?<!-- STATS:END -->/;
-  // Only a genuinely missing marker block is fatal — identical content just means
-  // nothing changed since the last run, which is fine (idempotent re-run).
-  if (!markers.test(md)) {
-    console.error('No <!-- STATS:START/END --> markers found in README.');
-    process.exit(1);
-  }
-  // v.ok/(v.ok + v.broken) would always read N/N — a broken shader aborts the
-  // run above before this line runs — so the informative ratio is against the
-  // whole corpus (tCount), which shows how much of it is parseable/verified
-  // vs. out-of-scope fragments.
   const date = new Date().toISOString().slice(0, 10);
   const caption = `_${v.ok}/${tCount} parseable shaders. ✅ Verified ${date}. [How this is measured](docs/stats.md)_`;
-  const block = `<!-- STATS:START -->\n${table}\n\n${caption}\n<!-- STATS:END -->`;
-  // Format before diffing against the on-disk file (also prettier-formatted by
-  // the last run) — otherwise our hand-padded table never byte-matches the
-  // formatted file and this "up to date" check would never fire. Config isn't
-  // auto-loaded by the programmatic API (unlike the CLI) — resolve it
-  // ourselves or this reformats the whole file with prettier's defaults.
-  const config = await resolveConfig(readme);
-  const next = await format(md.replace(markers, block), { ...config, filepath: readme });
-  if (next === md) {
-    console.log('· README stats already up to date');
-  } else {
-    writeFileSync(readme, next);
-    console.log('✓ README stats updated');
-  }
+  taglifyFile(readme, { STATS: `${table}\n\n${caption}` });
+  execFileSync(resolve(here, '..', 'node_modules', '.bin', 'prettier'), ['--write', readme]);
+  console.log('✓ README stats updated');
 }
