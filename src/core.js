@@ -3,7 +3,6 @@ import _traverse from '@babel/traverse';
 
 import {
   DEFAULT_TAGS,
-  isWGSL,
   RE_BLOCK_COMMENT,
   RE_CRLF,
   RE_DELIM_WS,
@@ -11,6 +10,7 @@ import {
   RE_INLINE_WS,
   RE_LINE_COMMENT,
   SHADER_SIGNAL,
+  isWGSL,
   tagCommentRe,
 } from './defaults.js';
 

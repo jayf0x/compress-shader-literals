@@ -14,7 +14,7 @@ import { brotliCompressSync, gzipSync } from 'node:zlib';
 import { WgslParser } from 'wgsl_reflect/wgsl_reflect.module.js';
 
 import { minifyShader } from '../src/core.js';
-import { isWGSL, RE_BLOCK_COMMENT, RE_CRLF, RE_LINE_COMMENT } from '../src/defaults.js';
+import { RE_BLOCK_COMMENT, RE_CRLF, RE_LINE_COMMENT, isWGSL } from '../src/defaults.js';
 
 const traverse = _traverse.default || _traverse;
 const here = dirname(fileURLToPath(import.meta.url));
