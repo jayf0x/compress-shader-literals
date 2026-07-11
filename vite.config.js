@@ -1,9 +1,10 @@
 import { measureSize } from 'byte-snap';
 import { resolve } from 'path';
+import include from 'plugin-include';
 import { defineConfig } from 'vite';
 
 export default defineConfig({
-  plugins: [measureSize.vite({ dir: 'dist' })],
+  plugins: [measureSize.vite({ dir: 'dist' }), include('./README.md')],
   build: {
     minify: 'oxc',
     lib: {

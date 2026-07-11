@@ -13,6 +13,7 @@ import { cpus } from 'node:os';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { Worker } from 'node:worker_threads';
+import { format, resolveConfig } from 'prettier';
 
 import { packages } from './utils.js';
 
@@ -138,14 +139,17 @@ if (process.argv.includes('--write')) {
   const date = new Date().toISOString().slice(0, 10);
   const caption = `_${v.ok}/${tCount} parseable shaders. ✅ Verified ${date}. [How this is measured](docs/stats.md)_`;
   const block = `<!-- STATS:START -->\n${table}\n\n${caption}\n<!-- STATS:END -->`;
-  const next = md.replace(markers, block);
+  // Format before diffing against the on-disk file (also prettier-formatted by
+  // the last run) — otherwise our hand-padded table never byte-matches the
+  // formatted file and this "up to date" check would never fire. Config isn't
+  // auto-loaded by the programmatic API (unlike the CLI) — resolve it
+  // ourselves or this reformats the whole file with prettier's defaults.
+  const config = await resolveConfig(readme);
+  const next = await format(md.replace(markers, block), { ...config, filepath: readme });
   if (next === md) {
     console.log('· README stats already up to date');
   } else {
     writeFileSync(readme, next);
-    // Table columns are hand-padded above — pipe it through the project's own
-    // formatter so README stays consistent with `bun run format`.
-    execFileSync(resolve(here, '..', 'node_modules', '.bin', 'prettier'), ['--write', readme]);
     console.log('✓ README stats updated');
   }
 }
