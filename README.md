@@ -66,6 +66,13 @@ const frag = /* wgsl */ `
 | `outputRatio` | `false`                      | Print a bytes-saved summary after build                                    |
 | `transform`   | built-in `minifyShader`      | Custom minifier — `(shader: string) => string`                             |
 | `debug`       | `false`                      | Log each file's discovered literals to the console                         |
+| `validate`    | `false`                      | Re-parse each changed shader and warn on build if one stops parsing        |
+
+**`validate: true`** — re-parses every shader the plugin touches, before and after, and warns (via the bundler's normal warning channel) if one stopped parsing. Needs [`@shaderfrog/glsl-parser`](https://www.npmjs.com/package/@shaderfrog/glsl-parser) (GLSL) and/or [`wgsl_reflect`](https://www.npmjs.com/package/wgsl_reflect) (WGSL) installed — both are optional peer dependencies, loaded lazily so builds that don't opt in never pay for them:
+
+```js
+compressShaderLiterals.vite({ validate: true });
+```
 
 **`scan: 'loose'`** — for files Babel can't parse (anything that isn't plain JS/TS: Svelte components, Astro components, etc). Instead of a whole-file AST parse, it matches the same tagged/comment-prefixed literal shapes by regex. Opt in and point `include` at the files yourself — there's no whole-file syntax guarantee, so a match is only touched once its content also looks like a real shader:
 

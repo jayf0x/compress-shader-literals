@@ -24,6 +24,13 @@ export interface CompressShaderLiteralsOptions {
   transform?: (shader: string) => string;
   /** Log each file's discovered literals to the console. Default: `false` */
   debug?: boolean;
+  /**
+   * Re-parse each changed shader before/after minifying and warn on build if
+   * one stops parsing. Needs `@shaderfrog/glsl-parser` (GLSL) and/or
+   * `wgsl_reflect` (WGSL) installed — both are optional peer dependencies,
+   * loaded lazily so non-validating builds never pay for them. Default: `false`
+   */
+  validate?: boolean;
 }
 
 /** A shader literal discovered in source. */

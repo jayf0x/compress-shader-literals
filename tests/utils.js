@@ -14,7 +14,7 @@ import { brotliCompressSync, gzipSync } from 'node:zlib';
 import { WgslParser } from 'wgsl_reflect/wgsl_reflect.module.js';
 
 import { minifyShader } from '../src/core.js';
-import { RE_BLOCK_COMMENT, RE_CRLF, RE_LINE_COMMENT, isWGSL } from '../src/defaults.js';
+import { bracketsOk, continuationOk, isWGSL } from '../src/defaults.js';
 
 const traverse = _traverse.default || _traverse;
 const here = dirname(fileURLToPath(import.meta.url));
@@ -42,40 +42,11 @@ export const JS_FILE = /\.(js|mjs|cjs)$/;
 // imports from tests/utils.js keep working.
 export { isWGSL };
 
-/**
- * A backslash that is not immediately followed by a newline. In GLSL a `\` is
- * only ever a line-continuation (multiline `#define`/directive), which is legal
- * *only* right before a newline; WGSL has no legal `\` at all. So this pattern
- * is a whitespace-corruption smoke alarm that works even where no parser can
- * check the shader — glslify fragments and WGSL both land in the parser's blind
- * spots, and this is what catches a joined-away continuation there.
- */
-export const RE_BROKEN_CONTINUATION = /\\(?!\n)/;
-/** A whitespace/comment-only transform must never break a line-continuation. */
-export const continuationOk = (src) => !RE_BROKEN_CONTINUATION.test(src);
-
-/**
- * Structural invariant that needs no parser, so it reaches the WGSL + glslify
- * fragments the GLSL parser can't (~a third of the corpus). The minifier only
- * touches whitespace and comments — it never adds or removes a bracket — so the
- * bracket/paren/brace counts of the comment-stripped source must equal those of
- * the output. Comments are stripped from `before` first (their inner brackets go
- * away legitimately); partial fragments are fine because this compares before↔
- * after, not "is balanced". Any mismatch is real corruption.
- */
-export function bracketsOk(before, after) {
-  const clean = before.replace(RE_CRLF, '\n').replace(RE_BLOCK_COMMENT, '').replace(RE_LINE_COMMENT, '');
-  const count = (s) => {
-    const c = [0, 0, 0, 0, 0, 0];
-    const k = '()[]{}';
-    for (const ch of s) {
-      const i = k.indexOf(ch);
-      if (i >= 0) c[i]++;
-    }
-    return c.join(',');
-  };
-  return count(clean) === count(after);
-}
+// continuationOk / bracketsOk (the parser-free invariants — reach WGSL +
+// glslify fragments no parser can) now live in src/defaults.js, shared with
+// the opt-in build-time validate.js. Re-exported here so existing imports
+// from tests/utils.js keep working.
+export { bracketsOk, continuationOk };
 
 // --- Corpus ------------------------------------------------------------------
 

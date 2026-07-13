@@ -17,9 +17,11 @@ export default defineConfig({
         '@babel/parser',
         '@babel/traverse',
         '@rollup/pluginutils',
+        '@shaderfrog/glsl-parser',
         'byte-snap',
         'magic-string',
         'unplugin',
+        /^wgsl_reflect/,
         /^node:/,
       ],
       output: {

@@ -6,6 +6,11 @@ import { createUnplugin } from 'unplugin';
 import { extractShaderLiterals, extractShaderLiteralsLoose, minifyShader } from './core.js';
 import { DEFAULT_EXCLUDE, DEFAULT_INCLUDE, DEFAULT_TAGS } from './defaults.js';
 
+// validate.js is dynamically imported (see below), not statically, so its code
+// — and the parser peer deps it lazily pulls in — stay out of dist/index.js
+// entirely for the (majority) of builds that never set `validate: true`.
+let validatePromise;
+
 // plugin.js is the build entry (index.js tree-shakes to nothing under
 // sideEffects:false), so re-export the public core API here too — keeps dist's
 // runtime exports matching index.d.ts.
@@ -41,6 +46,7 @@ export const compressShaderLiterals = createUnplugin((options = {}) => {
 
       const ms = new MagicString(code);
       let hasChanges = false;
+      const pending = [];
 
       for (const literal of literals) {
         const minified = minify(literal.value);
@@ -48,6 +54,19 @@ export const compressShaderLiterals = createUnplugin((options = {}) => {
         if (literal.value !== minified) {
           ms.overwrite(literal.start, literal.end, `\`${minified}\``);
           hasChanges = true;
+
+          if (options.validate) {
+            validatePromise ??= import('./validate.js');
+            pending.push(
+              validatePromise
+                .then(({ validateShader }) => validateShader(literal.value, minified))
+                .then((status) => {
+                  if (status === 'broken') {
+                    this.warn(`compress-shader-literals: minified ${literal.tag}\`...\` in ${id} stopped parsing`);
+                  }
+                })
+            );
+          }
         }
 
         if (options.outputRatio) {
@@ -59,10 +78,12 @@ export const compressShaderLiterals = createUnplugin((options = {}) => {
 
       if (!hasChanges) return null;
 
-      return {
+      const result = {
         code: ms.toString(),
         map: ms.generateMap({ hires: true, source: id }),
       };
+
+      return pending.length ? Promise.all(pending).then(() => result) : result;
     },
 
     buildEnd() {

@@ -58,3 +58,33 @@ test('scan: "loose" minifies shaders in non-JS-parseable source', () => {
   expect(out.code).not.toContain('// tonemap');
   expect(out.code).toContain('glsl`void main(){gl_FragColor=vec4(1.0);}`');
 });
+
+// validate: true dynamically imports validate.js (see src/plugin.js) — a real
+// shader (no `transform` override) never fails to re-parse, so this is the
+// "silent" path: transform resolves to the same result as without validate.
+test('validate: true resolves (async) and leaves valid output untouched', async () => {
+  const validatingPlugin = compressShaderLiterals.raw({ validate: true });
+  const out = validatingPlugin.transform(withShader, 'shader.js');
+  expect(typeof out.then).toBe('function'); // validate makes transform return a Promise
+  const resolved = await out;
+  expect(resolved.code).not.toContain('// tonemap');
+});
+
+// A custom `transform` that corrupts the shader (drops a brace) must surface a
+// build warning via the standard rollup/unplugin `this.warn` — the plugin
+// context method, not console.warn — so bundlers show it like any other
+// plugin warning.
+test('validate: true warns when a custom transform breaks the shader', async () => {
+  const warnings = [];
+  const ctx = { warn: (msg) => warnings.push(msg) };
+
+  const breakingPlugin = compressShaderLiterals.raw({
+    validate: true,
+    transform: (src) => src.replace('}', ''),
+  });
+
+  const out = breakingPlugin.transform.call(ctx, withShader, 'shader.js');
+  await out;
+  expect(warnings).toHaveLength(1);
+  expect(warnings[0]).toContain('stopped parsing');
+});

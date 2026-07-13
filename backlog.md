@@ -2,13 +2,11 @@
 
 Each item points at the files to read first. Research before building.
 
-## Extend shader validation — opt-in build-time validation
+## ~~Extend shader validation — opt-in build-time validation~~ (done)
 
-files: `src/plugin.js`, `tests/utils.js` (`validateGlsl`)
+Shipped: `validate: true` re-parses each changed shader at build time and warns via the bundler's `this.warn` if one stops parsing. Lands in `src/validate.js`, dynamically imported from `src/plugin.js` only when `validate` is set — so the parser deps never touch `dist/index.js`'s bundled size for the (majority) of builds that don't opt in (verified: `size-limit` stayed under 1.7 kB after this shipped). The parser-free invariants (`bracketsOk`, `continuationOk`) moved to `src/defaults.js`, shared between `validate.js` and the benchmark corpus's `validateGlsl` in `tests/utils.js`.
 
-why: `validateGlsl` now parses both dialects for real — `@shaderfrog/glsl-parser` for GLSL, `wgsl_reflect` (a `tests/`-only dep) for WGSL — so the benchmark corpus gets a genuine before/after parse guarantee either way. Unparseable fragments (glslify chunks missing `#include` context, macro-laden WGSL like Babylon.js's `#ifdef`-guarded shaders) are still out of scope for any parser, but are still structurally checked (`bracketsOk`, `continuationOk`). What's left: this guarantee only covers the benchmark corpus, not a user's own shaders.
-
-- **Opt-in `validate: true` in the plugin.** Re-parse each shader the plugin touches at build time and warn when one stops parsing, so user shaders outside the benchmark corpus get the same guarantee. Reuse `validateGlsl` (move it, or the parsing it wraps, from `tests/utils.js` into `src/` if this ships — decide whether `wgsl_reflect`/`@shaderfrog/glsl-parser` are worth adding as real runtime deps for an opt-in feature, given "stay tiny and boring").
+Resolved the "stay tiny and boring" tension by making `@shaderfrog/glsl-parser` / `wgsl_reflect` optional peer dependencies (`peerDependenciesMeta.optional: true`), not hard runtime deps — installed only by consumers who opt in. Tests: `tests/validate.test.js`, plus two `validate: true` cases in `tests/plugin.test.js`.
 
 ## Comparison / relevance stats vs other minifiers
 

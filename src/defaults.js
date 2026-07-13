@@ -69,3 +69,38 @@ export const isWGSL = (src) => WGSL_SIGNAL.test(src) && !/void\s+main/.test(src)
  * pattern itself never touches a `=` directly after a `>` either way.
  */
 export const RE_EQ_WS = /(?<!>)\s+=\s+/g;
+
+// --- Parser-free validation invariants ---------------------------------------
+// Reach fragments no parser can (glslify chunks, macro-laden WGSL) since they
+// only compare before↔after text, never require a successful parse of either.
+// Shared by tests/utils.js (benchmark corpus) and validate.js (opt-in build-time
+// checking of a user's own shaders) so both guarantees stay in lockstep.
+
+/**
+ * A backslash that is not immediately followed by a newline. In GLSL a `\` is
+ * only ever a line-continuation (multiline `#define`/directive), which is legal
+ * *only* right before a newline; WGSL has no legal `\` at all.
+ */
+export const RE_BROKEN_CONTINUATION = /\\(?!\n)/;
+/** A whitespace/comment-only transform must never break a line-continuation. */
+export const continuationOk = (src) => !RE_BROKEN_CONTINUATION.test(src);
+
+/**
+ * The minifier only touches whitespace and comments — it never adds or removes
+ * a bracket — so the bracket/paren/brace counts of the comment-stripped source
+ * must equal those of the output. Comments are stripped from `before` first
+ * (their inner brackets go away legitimately).
+ */
+export function bracketsOk(before, after) {
+  const clean = before.replace(RE_CRLF, '\n').replace(RE_BLOCK_COMMENT, '').replace(RE_LINE_COMMENT, '');
+  const count = (s) => {
+    const c = [0, 0, 0, 0, 0, 0];
+    const k = '()[]{}';
+    for (const ch of s) {
+      const i = k.indexOf(ch);
+      if (i >= 0) c[i]++;
+    }
+    return c.join(',');
+  };
+  return count(clean) === count(after);
+}
