@@ -1,5 +1,11 @@
 # Changelog
 
+## v1.3.8
+
+- Add opt-in build-time validation
+- Add caching for compression results
+- Fix publish not including formatted files
+
 ## v1.3.7
 
 - Add dialect-aware equals sign trimming for WGSL

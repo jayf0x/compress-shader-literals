@@ -124,7 +124,7 @@ Real shaders shipped by popular libraries, run through the built-in minifier:
 | `postprocessing`              |     136 |   179,705 B |   179,705 B |  **0.0%** |            +0.0% |
 | **Total**                     |    3323 | 4,976,645 B | 3,875,051 B | **22.1%** |                — |
 
-_2477/3323 parseable shaders. ✅ Verified 2026-07-11. [How this is measured](docs/stats.md)_
+_2477/3323 parseable shaders. ✅ Verified 2026-07-13. [How this is measured](docs/stats.md)_
 
 <!-- STATS:END -->
 
