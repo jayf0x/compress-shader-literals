@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="en">
+<html lang="en" data-bs-theme="dark">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -12,65 +12,98 @@
     <link rel="stylesheet" href="/src/style.css" />
   </head>
   <body>
-    <div id="app">
-      <header>
-        <h1>✂️ compress-shader-literals</h1>
-        <p>
-          Strip comments &amp; whitespace from GLSL/WGSL shader literals — try it live, or point it at a real npm
-          package.
-          <a href="https://github.com/jayf0x/compress-shader-literals" target="_blank" rel="noopener">GitHub</a>
-          ·
-          <a href="https://www.npmjs.com/package/compress-shader-literals" target="_blank" rel="noopener">npm</a>
-        </p>
-      </header>
-
-      <section class="panel">
-        <h2>1. Paste &amp; run</h2>
-        <p class="hint">
-          Paste JS/TS containing tagged shader literals (<code>glsl\`...\`</code>, <code>wgsl\`...\`</code>) or a raw
-          shader body.
-        </p>
-        <div class="split">
-          <div class="col">
-            <label for="input">Input</label>
-            <textarea id="input" spellcheck="false"></textarea>
-          </div>
-          <div class="col">
-            <div class="col-header">
-              <label for="output">Output</label>
-              <button id="copy-output" type="button">Copy</button>
-            </div>
-            <textarea id="output" spellcheck="false" readonly></textarea>
-          </div>
+    <div class="container py-5" style="max-width: 1040px">
+      <header class="d-flex flex-wrap justify-content-between align-items-start gap-3 mb-5">
+        <div>
+          <h1 class="h3 mb-2">✂️ compress-shader-literals</h1>
+          <p class="text-body-secondary mb-0">Strip comments &amp; whitespace from GLSL/WGSL shader literals.</p>
         </div>
-        <div class="row">
-          <button id="run-simple" type="button" class="primary">Run</button>
-          <span id="simple-stats" class="stats"></span>
-        </div>
-      </section>
-
-      <section class="panel">
-        <h2>2. Test against a real npm package</h2>
-        <p class="hint">
-          Boots a <a href="https://webcontainers.io/" target="_blank" rel="noopener">WebContainer</a> in your browser,
-          <code>npm install</code>s the package for real, scans its shipped JS for shader-shaped template literals, and
-          reports before/after size — a lightweight version of this repo's
+        <div class="d-flex gap-2">
           <a
-            href="https://github.com/jayf0x/compress-shader-literals/blob/main/tests/e2e.js"
+            class="btn btn-success"
+            href="https://www.npmjs.com/package/compress-shader-literals"
             target="_blank"
             rel="noopener"
-            >e2e test</a
-          >. Needs a Chromium-based browser.
-        </p>
-        <div class="row">
-          <input id="pkg-name" type="text" placeholder="e.g. three, ogl, pixi.js" value="ogl" />
-          <button id="run-pkg" type="button" class="primary">Install &amp; run</button>
+            >npm ↗</a
+          >
+          <a
+            class="btn btn-outline-light"
+            href="https://github.com/jayf0x/compress-shader-literals"
+            target="_blank"
+            rel="noopener"
+            >GitHub ↗</a
+          >
         </div>
-        <pre id="pkg-log" class="log" aria-live="polite"></pre>
-        <div id="pkg-result" class="result"></div>
+      </header>
+
+      <section class="card bg-body-tertiary border-0 shadow-sm mb-4">
+        <div class="card-body p-4">
+          <div class="d-flex justify-content-between align-items-center mb-3">
+            <h2 class="h5 mb-0">1. Paste &amp; run</h2>
+            <small class="text-body-secondary"
+              >tagged (<code>glsl\`...\`</code>) or raw shader source</small
+            >
+          </div>
+          <div class="row g-4">
+            <div class="col-12 col-lg-6">
+              <label for="input" class="form-label text-body-secondary small text-uppercase">Input</label>
+              <textarea id="input" class="form-control code-area" spellcheck="false"></textarea>
+            </div>
+            <div class="col-12 col-lg-6">
+              <div class="d-flex justify-content-between align-items-center mb-2">
+                <label for="output" class="form-label text-body-secondary small text-uppercase mb-0">Output</label>
+                <button id="copy-output" type="button" class="btn btn-sm btn-outline-secondary">Copy</button>
+              </div>
+              <textarea id="output" class="form-control code-area" spellcheck="false" readonly></textarea>
+            </div>
+          </div>
+          <div class="d-flex align-items-center gap-3 mt-4">
+            <button id="run-simple" type="button" class="btn btn-primary px-4">Run</button>
+            <span id="simple-stats" class="text-body-secondary font-monospace small"></span>
+          </div>
+        </div>
       </section>
 
-      <footer>
+      <section class="card bg-body-tertiary border-0 shadow-sm">
+        <div class="card-body p-4">
+          <h2 class="h5 mb-2">2. Test against a real npm package</h2>
+          <p class="text-body-secondary small">
+            Boots a <a href="https://webcontainers.io/" target="_blank" rel="noopener">WebContainer</a> in your
+            browser, installs the package for real, scans its shipped JS for shader-shaped template literals, and
+            reports before/after size — a lightweight version of this repo's
+            <a
+              href="https://github.com/jayf0x/compress-shader-literals/blob/main/tests/e2e.js"
+              target="_blank"
+              rel="noopener"
+              >e2e test</a
+            >. Needs a Chromium-based browser.
+          </p>
+          <div class="d-flex gap-2">
+            <input id="pkg-name" type="text" class="form-control" placeholder="e.g. three, ogl, pixi.js" value="ogl" />
+            <button id="run-pkg" type="button" class="btn btn-primary px-4 text-nowrap">Install &amp; run</button>
+          </div>
+
+          <div id="install-progress" class="progress mt-3 d-none" role="progressbar" style="height: 6px">
+            <div class="progress-bar progress-bar-striped progress-bar-animated w-100"></div>
+          </div>
+
+          <div class="mt-3">
+            <div class="d-flex justify-content-between align-items-center">
+              <small class="text-body-secondary text-uppercase">Installing (<span id="pm-name">…</span>)</small>
+            </div>
+            <pre id="install-log" class="log" aria-live="polite"></pre>
+          </div>
+
+          <div class="mt-3">
+            <small class="text-body-secondary text-uppercase">compress-shader-literals</small>
+            <pre id="scan-log" class="log" aria-live="polite"></pre>
+          </div>
+
+          <div id="pkg-result" class="mt-3"></div>
+        </div>
+      </section>
+
+      <footer class="text-center text-body-secondary small mt-5">
         <span id="wc-support"></span>
       </footer>
     </div>

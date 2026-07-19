@@ -1,3 +1,5 @@
+import 'bootstrap/dist/css/bootstrap.min.css';
+
 import { extractShaderLiterals, minifyShader } from 'compress-shader-literals';
 
 import { scanPackage } from './webcontainer.js';
@@ -61,17 +63,20 @@ $('wc-support').textContent = wcSupported
   : 'WebContainers need a Chromium browser with cross-origin isolation — reload if the page just registered a service worker, or try Chrome/Edge.';
 
 const runPkgBtn = $('run-pkg');
-const pkgLog = $('pkg-log');
+const installLog = $('install-log');
+const scanLog = $('scan-log');
+const installProgress = $('install-progress');
+const pmName = $('pm-name');
 const pkgResult = $('pkg-result');
 
-function log(text) {
-  pkgLog.textContent += text;
-  pkgLog.scrollTop = pkgLog.scrollHeight;
+function appendTo(el, text) {
+  el.textContent += text;
+  el.scrollTop = el.scrollHeight;
 }
 
 function renderResult(pkgName, { count, before, after, samples }) {
   if (count === 0) {
-    pkgResult.innerHTML = `<p class="hint">No shader-shaped template literals found in <code>${pkgName}</code>.</p>`;
+    pkgResult.innerHTML = `<p class="text-body-secondary small mb-0">No shader-shaped template literals found in <code>${pkgName}</code>.</p>`;
     return;
   }
   const pct = (((before - after) / before) * 100).toFixed(1);
@@ -79,13 +84,17 @@ function renderResult(pkgName, { count, before, after, samples }) {
     .map((s) => `<tr><td>${s.file}</td><td>${s.before.length} B</td><td>${s.after.length} B</td></tr>`)
     .join('');
   pkgResult.innerHTML = `
-    <table>
+    <table class="table table-sm table-borderless result mb-2">
       <tr><th>Shaders found</th><td>${count}</td></tr>
       <tr><th>Before</th><td>${before.toLocaleString()} B</td></tr>
       <tr><th>After</th><td>${after.toLocaleString()} B</td></tr>
       <tr><th>Saved</th><td class="saved">${pct}%</td></tr>
     </table>
-    ${samples.length ? `<table><tr><th>Sample file</th><th>Before</th><th>After</th></tr>${sampleRows}</table>` : ''}
+    ${
+      samples.length
+        ? `<table class="table table-sm result"><tr><th>Sample file</th><th>Before</th><th>After</th></tr>${sampleRows}</table>`
+        : ''
+    }
   `;
 }
 
@@ -94,16 +103,23 @@ runPkgBtn.addEventListener('click', async () => {
   if (!pkgName) return;
 
   runPkgBtn.disabled = true;
-  pkgLog.textContent = '';
+  installLog.textContent = '';
+  scanLog.textContent = '';
   pkgResult.innerHTML = '';
-  log(`Booting WebContainer and installing ${pkgName}...\n`);
+  pmName.textContent = '…';
+  installProgress.classList.remove('d-none');
 
   try {
-    const result = await scanPackage(pkgName, log);
+    const result = await scanPackage(pkgName, {
+      onInstallLog: (text) => appendTo(installLog, text),
+      onScanLog: (text) => appendTo(scanLog, text),
+      onInstaller: (bin) => (pmName.textContent = bin),
+    });
     renderResult(pkgName, result);
   } catch (err) {
-    log(`\n${err.message}\n`);
+    appendTo(installLog, `\n${err.message}\n`);
   } finally {
+    installProgress.classList.add('d-none');
     runPkgBtn.disabled = false;
   }
 });
