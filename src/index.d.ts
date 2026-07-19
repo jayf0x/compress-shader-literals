@@ -22,6 +22,13 @@ export interface CompressShaderLiteralsOptions {
   outputRatio?: boolean;
   /** Custom minifier, replaces the built-in `minifyShader`. Receives the raw literal, returns the transformed source. */
   transform?: (shader: string) => string;
+  /**
+   * Batch minifier for engines that minify many shaders in one call (e.g. one
+   * binary spawn, consistent identifier renaming across shaders). Called once
+   * per module with every literal's raw source; must return the same number
+   * of results in the same order. Takes priority over `transform` when set.
+   */
+  transformBatch?: (shaders: string[]) => string[] | Promise<string[]>;
   /** Log each file's discovered literals to the console. Default: `false` */
   debug?: boolean;
   /**

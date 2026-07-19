@@ -88,3 +88,36 @@ test('validate: true warns when a custom transform breaks the shader', async () 
   expect(warnings).toHaveLength(1);
   expect(warnings[0]).toContain('stopped parsing');
 });
+
+// transformBatch gets every literal in the module in one call and must return
+// results in the same order — this is the hook a "spawn once, minify N
+// shaders" engine (e.g. shader_minifier) plugs into instead of `transform`.
+test('transformBatch receives all literals at once and applies results in order', async () => {
+  const twoShaders = `
+const a = /* glsl */ \`AAA\`;
+const b = /* glsl */ \`BBB\`;
+`;
+  const seen = [];
+  const batchPlugin = compressShaderLiterals.raw({
+    transformBatch: (sources) => {
+      seen.push(sources);
+      return sources.map((s) => s.toLowerCase());
+    },
+  });
+
+  const out = await batchPlugin.transform(twoShaders, 'shader.js');
+  expect(seen).toEqual([['AAA', 'BBB']]);
+  expect(out.code).toContain('`aaa`');
+  expect(out.code).toContain('`bbb`');
+});
+
+// transformBatch wins over transform when both are set.
+test('transformBatch takes priority over transform', async () => {
+  const batchPlugin = compressShaderLiterals.raw({
+    transform: () => 'wrong',
+    transformBatch: (sources) => sources.map((s) => s.toUpperCase()),
+  });
+
+  const out = await batchPlugin.transform('const a = /* glsl */ `abc`;', 'shader.js');
+  expect(out.code).toContain('`ABC`');
+});

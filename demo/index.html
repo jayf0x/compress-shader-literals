@@ -1,0 +1,69 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>compress-shader-literals — playground</title>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>✂️</text></svg>" />
+    <script src="coi-serviceworker.js"></script>
+    <link rel="stylesheet" href="/src/style.css" />
+  </head>
+  <body>
+    <div id="app">
+      <header>
+        <h1>✂️ compress-shader-literals</h1>
+        <p>
+          Strip comments &amp; whitespace from GLSL/WGSL shader literals — try it live, or point it at a real npm
+          package.
+          <a href="https://github.com/jayf0x/compress-shader-literals" target="_blank" rel="noopener">GitHub</a>
+          ·
+          <a href="https://www.npmjs.com/package/compress-shader-literals" target="_blank" rel="noopener">npm</a>
+        </p>
+      </header>
+
+      <section class="panel">
+        <h2>1. Paste &amp; run</h2>
+        <p class="hint">Paste JS/TS containing tagged shader literals (<code>glsl\`...\`</code>, <code>wgsl\`...\`</code>) or a raw shader body.</p>
+        <div class="split">
+          <div class="col">
+            <label for="input">Input</label>
+            <textarea id="input" spellcheck="false"></textarea>
+          </div>
+          <div class="col">
+            <div class="col-header">
+              <label for="output">Output</label>
+              <button id="copy-output" type="button">Copy</button>
+            </div>
+            <textarea id="output" spellcheck="false" readonly></textarea>
+          </div>
+        </div>
+        <div class="row">
+          <button id="run-simple" type="button" class="primary">Run</button>
+          <span id="simple-stats" class="stats"></span>
+        </div>
+      </section>
+
+      <section class="panel">
+        <h2>2. Test against a real npm package</h2>
+        <p class="hint">
+          Boots a <a href="https://webcontainers.io/" target="_blank" rel="noopener">WebContainer</a> in your
+          browser, <code>npm install</code>s the package for real, scans its shipped JS for shader-shaped template
+          literals, and reports before/after size — a lightweight version of this repo's
+          <a href="https://github.com/jayf0x/compress-shader-literals/blob/main/tests/e2e.js" target="_blank" rel="noopener">e2e test</a>.
+          Needs a Chromium-based browser.
+        </p>
+        <div class="row">
+          <input id="pkg-name" type="text" placeholder="e.g. three, ogl, pixi.js" value="ogl" />
+          <button id="run-pkg" type="button" class="primary">Install &amp; run</button>
+        </div>
+        <pre id="pkg-log" class="log" aria-live="polite"></pre>
+        <div id="pkg-result" class="result"></div>
+      </section>
+
+      <footer>
+        <span id="wc-support"></span>
+      </footer>
+    </div>
+    <script type="module" src="/src/main.js"></script>
+  </body>
+</html>

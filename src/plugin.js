@@ -19,6 +19,7 @@ export { extractShaderLiterals, extractShaderLiteralsLoose, minifyShader } from 
 export const compressShaderLiterals = createUnplugin((options = {}) => {
   const tags = options.tags || DEFAULT_TAGS;
   const minify = options.transform || minifyShader;
+  const minifyBatch = options.transformBatch;
   const extract = options.scan === 'loose' ? extractShaderLiteralsLoose : extractShaderLiterals;
   const filter = createFilter(options.include || DEFAULT_INCLUDE, options.exclude || DEFAULT_EXCLUDE);
 
@@ -44,46 +45,59 @@ export const compressShaderLiterals = createUnplugin((options = {}) => {
         );
       }
 
-      const ms = new MagicString(code);
-      let hasChanges = false;
-      const pending = [];
+      const applyMinified = (minifiedList) => {
+        const ms = new MagicString(code);
+        let hasChanges = false;
+        const pending = [];
 
-      for (const literal of literals) {
-        const minified = minify(literal.value);
+        literals.forEach((literal, i) => {
+          const minified = minifiedList[i];
 
-        if (literal.value !== minified) {
-          ms.overwrite(literal.start, literal.end, `\`${minified}\``);
-          hasChanges = true;
+          if (literal.value !== minified) {
+            ms.overwrite(literal.start, literal.end, `\`${minified}\``);
+            hasChanges = true;
 
-          if (options.validate) {
-            validatePromise ??= import('./validate.js');
-            pending.push(
-              validatePromise
-                .then(({ validateShader }) => validateShader(literal.value, minified))
-                .then((status) => {
-                  if (status === 'broken') {
-                    this.warn(`compress-shader-literals: minified ${literal.tag}\`...\` in ${id} stopped parsing`);
-                  }
-                })
-            );
+            if (options.validate) {
+              validatePromise ??= import('./validate.js');
+              pending.push(
+                validatePromise
+                  .then(({ validateShader }) => validateShader(literal.value, minified))
+                  .then((status) => {
+                    if (status === 'broken') {
+                      this.warn(`compress-shader-literals: minified ${literal.tag}\`...\` in ${id} stopped parsing`);
+                    }
+                  })
+              );
+            }
           }
-        }
 
-        if (options.outputRatio) {
-          beforeText += literal.value;
-          afterText += minified;
-          shaderCount++;
-        }
-      }
+          if (options.outputRatio) {
+            beforeText += literal.value;
+            afterText += minified;
+            shaderCount++;
+          }
+        });
 
-      if (!hasChanges) return null;
+        if (!hasChanges) return null;
 
-      const result = {
-        code: ms.toString(),
-        map: ms.generateMap({ hires: true, source: id }),
+        const result = {
+          code: ms.toString(),
+          map: ms.generateMap({ hires: true, source: id }),
+        };
+
+        return pending.length ? Promise.all(pending).then(() => result) : result;
       };
 
-      return pending.length ? Promise.all(pending).then(() => result) : result;
+      // transformBatch feeds every literal in this module to the engine in one
+      // call (e.g. one shader_minifier spawn for N shaders, consistent renaming)
+      // instead of one call per literal. Per-module, not per-chunk: batching
+      // across files needs renderChunk and cross-file source remapping, which
+      // no engine here asks for yet — add if a batch engine wants bigger batches.
+      if (minifyBatch) {
+        return Promise.resolve(minifyBatch(literals.map((l) => l.value))).then(applyMinified);
+      }
+
+      return applyMinified(literals.map((l) => minify(l.value)));
     },
 
     buildEnd() {

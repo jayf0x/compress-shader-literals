@@ -65,6 +65,7 @@ const frag = /* wgsl */ `
 | `exclude`     | `[/node_modules/, /dist/]`   | Files to skip — dependencies are skipped by default                        |
 | `outputRatio` | `false`                      | Print a bytes-saved summary after build                                    |
 | `transform`   | built-in `minifyShader`      | Custom minifier — `(shader: string) => string`                             |
+| `transformBatch` | none                      | Batch minifier — `(shaders: string[]) => string[] \| Promise<string[]>`, one call per module, all its literals at once; wins over `transform` when set |
 | `debug`       | `false`                      | Log each file's discovered literals to the console                         |
 | `validate`    | `false`                      | Re-parse each changed shader and warn on build if one stops parsing        |
 
