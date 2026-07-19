@@ -57,17 +57,17 @@ const frag = /* wgsl */ `
 
 **Options**
 
-| Option        | Default                      | Description                                                                |
-| ------------- | ---------------------------- | -------------------------------------------------------------------------- |
-| `tags`        | `['glsl', 'wgsl', 'shader']` | Tag names / comment markers to match                                       |
-| `scan`        | `'ast'`                      | `'ast'` parses the file with Babel; `'loose'` matches by regex — see below |
-| `include`     | `[/\.[mc]?[jt]sx?$/]`        | Files to process — the JS/TS family Babel can parse                        |
-| `exclude`     | `[/node_modules/, /dist/]`   | Files to skip — dependencies are skipped by default                        |
-| `outputRatio` | `false`                      | Print a bytes-saved summary after build                                    |
-| `transform`   | built-in `minifyShader`      | Custom minifier — `(shader: string) => string`                             |
-| `transformBatch` | none                      | Batch minifier — `(shaders: string[]) => string[] \| Promise<string[]>`, one call per module, all its literals at once; wins over `transform` when set |
-| `debug`       | `false`                      | Log each file's discovered literals to the console                         |
-| `validate`    | `false`                      | Re-parse each changed shader and warn on build if one stops parsing        |
+| Option           | Default                      | Description                                                                                                                                            |
+| ---------------- | ---------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `tags`           | `['glsl', 'wgsl', 'shader']` | Tag names / comment markers to match                                                                                                                   |
+| `scan`           | `'ast'`                      | `'ast'` parses the file with Babel; `'loose'` matches by regex — see below                                                                             |
+| `include`        | `[/\.[mc]?[jt]sx?$/]`        | Files to process — the JS/TS family Babel can parse                                                                                                    |
+| `exclude`        | `[/node_modules/, /dist/]`   | Files to skip — dependencies are skipped by default                                                                                                    |
+| `outputRatio`    | `false`                      | Print a bytes-saved summary after build                                                                                                                |
+| `transform`      | built-in `minifyShader`      | Custom minifier — `(shader: string) => string`                                                                                                         |
+| `transformBatch` | none                         | Batch minifier — `(shaders: string[]) => string[] \| Promise<string[]>`, one call per module, all its literals at once; wins over `transform` when set |
+| `debug`          | `false`                      | Log each file's discovered literals to the console                                                                                                     |
+| `validate`       | `false`                      | Re-parse each changed shader and warn on build if one stops parsing                                                                                    |
 
 **`validate: true`** — re-parses every shader the plugin touches, before and after, and warns (via the bundler's normal warning channel) if one stopped parsing. Needs [`@shaderfrog/glsl-parser`](https://www.npmjs.com/package/@shaderfrog/glsl-parser) (GLSL) and/or [`wgsl_reflect`](https://www.npmjs.com/package/wgsl_reflect) (WGSL) installed — both are optional peer dependencies, loaded lazily so builds that don't opt in never pay for them:
 
@@ -125,7 +125,7 @@ Real shaders shipped by popular libraries, run through the built-in minifier:
 | `postprocessing`              |     136 |   179,705 B |   179,705 B |  **0.0%** |            +0.0% |
 | **Total**                     |    3323 | 4,976,645 B | 3,875,051 B | **22.1%** |                — |
 
-_2477/3323 parseable shaders. ✅ Verified 2026-07-13. [How this is measured](docs/stats.md)_
+_2477/3323 parseable shaders. ✅ Verified 2026-07-19. [How this is measured](docs/stats.md)_
 
 <!-- STATS:END -->
 

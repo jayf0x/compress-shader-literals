@@ -1,5 +1,4 @@
 import { fileURLToPath } from 'node:url';
-
 import { defineConfig } from 'vite';
 
 const stubs = fileURLToPath(new URL('./src/plugin-stubs.js', import.meta.url));

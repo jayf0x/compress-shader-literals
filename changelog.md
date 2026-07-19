@@ -1,5 +1,9 @@
 # Changelog
 
+## v1.3.9
+
+- Add transformBatch API
+
 ## v1.3.8
 
 - Add opt-in build-time validation

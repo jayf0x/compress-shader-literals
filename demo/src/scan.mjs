@@ -5,7 +5,7 @@
 import { parse } from '@babel/parser';
 import _traverse from '@babel/traverse';
 import { minifyShader } from 'compress-shader-literals';
-import { readdirSync, readFileSync, statSync } from 'node:fs';
+import { readFileSync, readdirSync, statSync } from 'node:fs';
 import { join } from 'node:path';
 
 const traverse = _traverse.default || _traverse;

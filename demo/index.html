@@ -4,7 +4,10 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>compress-shader-literals — playground</title>
-    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>✂️</text></svg>" />
+    <link
+      rel="icon"
+      href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>✂️</text></svg>"
+    />
     <script src="coi-serviceworker.js"></script>
     <link rel="stylesheet" href="/src/style.css" />
   </head>
@@ -23,7 +26,10 @@
 
       <section class="panel">
         <h2>1. Paste &amp; run</h2>
-        <p class="hint">Paste JS/TS containing tagged shader literals (<code>glsl\`...\`</code>, <code>wgsl\`...\`</code>) or a raw shader body.</p>
+        <p class="hint">
+          Paste JS/TS containing tagged shader literals (<code>glsl\`...\`</code>, <code>wgsl\`...\`</code>) or a raw
+          shader body.
+        </p>
         <div class="split">
           <div class="col">
             <label for="input">Input</label>
@@ -46,11 +52,15 @@
       <section class="panel">
         <h2>2. Test against a real npm package</h2>
         <p class="hint">
-          Boots a <a href="https://webcontainers.io/" target="_blank" rel="noopener">WebContainer</a> in your
-          browser, <code>npm install</code>s the package for real, scans its shipped JS for shader-shaped template
-          literals, and reports before/after size — a lightweight version of this repo's
-          <a href="https://github.com/jayf0x/compress-shader-literals/blob/main/tests/e2e.js" target="_blank" rel="noopener">e2e test</a>.
-          Needs a Chromium-based browser.
+          Boots a <a href="https://webcontainers.io/" target="_blank" rel="noopener">WebContainer</a> in your browser,
+          <code>npm install</code>s the package for real, scans its shipped JS for shader-shaped template literals, and
+          reports before/after size — a lightweight version of this repo's
+          <a
+            href="https://github.com/jayf0x/compress-shader-literals/blob/main/tests/e2e.js"
+            target="_blank"
+            rel="noopener"
+            >e2e test</a
+          >. Needs a Chromium-based browser.
         </p>
         <div class="row">
           <input id="pkg-name" type="text" placeholder="e.g. three, ogl, pixi.js" value="ogl" />

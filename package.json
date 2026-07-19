@@ -1,6 +1,6 @@
 {
   "name": "compress-shader-literals",
-  "version": "1.3.8",
+  "version": "1.3.9",
   "type": "module",
   "description": "✂️ Strip comments & whitespace from GLSL/WGSL shader literals in your JS/TS at build time — any bundler, no toolchain, no runtime cost.",
   "main": "./dist/index.cjs",

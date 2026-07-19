@@ -1,4 +1,5 @@
 import { WebContainer } from '@webcontainer/api';
+
 import scanScript from './scan.mjs?raw';
 
 let bootPromise = null;
