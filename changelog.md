@@ -1,5 +1,9 @@
 # Changelog
 
+## v1.3.10
+
+- Internal/infrastructure changes only
+
 ## v1.3.9
 
 - Add transformBatch API

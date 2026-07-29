@@ -1,5 +1,4 @@
 import 'bootstrap/dist/css/bootstrap.min.css';
-
 import { extractShaderLiterals, minifyShader } from 'compress-shader-literals';
 
 import { scanPackage } from './webcontainer.js';
