@@ -2,8 +2,6 @@
 
 > **Size matters.** Strip everything strippable from your GLSL & WGSL shaders at build time.
 
-> ⭐ Star this repository to support development and help others discover it.
-
 [![npm version](https://img.shields.io/npm/v/compress-shader-literals?color=cb3837&logo=npm)](https://www.npmjs.com/package/compress-shader-literals)
 [![minzipped size](https://img.shields.io/bundlephobia/minzip/compress-shader-literals?color=success)](https://bundlephobia.com/package/compress-shader-literals)
 [![npm downloads](https://img.shields.io/npm/dm/compress-shader-literals?color=success)](https://www.npmjs.com/package/compress-shader-literals)
