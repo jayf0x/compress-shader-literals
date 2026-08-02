@@ -44,6 +44,7 @@ bun -e "
 "
 
 # ── build + typecheck + test ─────────────────────────────────────────────────
+bun run scan
 bun run build
 bun run typecheck
 bun run test

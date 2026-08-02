@@ -29,3 +29,6 @@ jobs:
 
       - name: Build
         run: bun run build
+
+      - name: Security scan
+        run: bun run scan
