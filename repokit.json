@@ -1,0 +1,18 @@
+{
+  "$schema": "./repokit.schema.json",
+  "include": [
+    "config/opengrep",
+    "scripts/opengrep-scan.sh",
+    "scripts/npm",
+    ".github/workflows/ci.yml",
+    ".github/workflows/publish.yml",
+    "CLAUDE.md"
+  ],
+  "exclude": [
+    "node_modules",
+    "dist",
+    ".git",
+    ".idea",
+    ".DS_Store"
+  ]
+}

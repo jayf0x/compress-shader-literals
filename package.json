@@ -31,7 +31,7 @@
     "tests:next": "cd tests && bun install && node experimental.js",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
-    "npm:deploy": "bash ./scripts/publish-npm.sh",
+    "npm:deploy": "bash ./scripts/npm/publish-npm.sh",
     "rm:stalepr": "git branch -vv | grep '\\[gone\\]' | awk '{print $1}' | xargs git branch -D",
     "size": "size-limit"
   },

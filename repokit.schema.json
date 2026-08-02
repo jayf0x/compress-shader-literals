@@ -1,0 +1,22 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "repokit config",
+  "type": "object",
+  "properties": {
+    "$schema": {
+      "type": "string"
+    },
+    "include": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "Paths to sync. Empty means nothing is synced yet."
+    },
+    "exclude": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "Paths to never sync, even under an included path."
+    }
+  },
+  "required": ["$schema", "include", "exclude"],
+  "additionalProperties": false
+}
