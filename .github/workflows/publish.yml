@@ -20,6 +20,10 @@ jobs:
           node-version: '24'
           registry-url: 'https://registry.npmjs.org'
 
+      # Trusted publishing (OIDC) needs npm >= 11.5.1 — no NPM_TOKEN secret required,
+      # just id-token: write above and the trusted publisher configured on npmjs.com.
+      - run: npm install -g npm@latest
+
       - uses: oven-sh/setup-bun@v2
 
       - run: bun install --frozen-lockfile
@@ -29,5 +33,3 @@ jobs:
       - run: bun run test
 
       - run: npm publish --access public --provenance --ignore-scripts
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
