@@ -24,6 +24,12 @@ What actually gets removed by minifying explains the gap. Two very different thi
 
 So a package whose shaders lean comment-heavy (rather than whitespace-heavy) will show a smaller "Saved" number and a larger "Net after Brotli" number — the bytes minifying removed there were "cheap" to strip in plain text but "expensive" to carry through compression. Nothing to worry about; it's just telling you _what kind_ of bytes that package's shaders wasted.
 
+## What "+ shader-minifier" measures
+
+The other columns are all this package's own engine (`minifyShader`: comments + whitespace, no renaming). The **+ shader-minifier** column instead runs each shader through [shader-minifier-plugin](https://github.com/jayf0x/shader-minifier-plugin)'s `createLiteralTransform` — full [shader_minifier](https://github.com/laurentlb/shader-minifier) optimization (identifier renaming, dead-code elimination, inlining), falling back to `minifyShader` for anything shader_minifier can't compile (fragments, `#include` chunks). See the README's "Full optimization" section for the composition itself.
+
+This column only appears when `shader-minifier-plugin` is checked out as a sibling repo and built locally (`../shader-minifier-plugin`, relative to this repo) — it's not an npm dependency of this project, and the numbers are skipped entirely rather than failing the run if it's missing. Each shader shells out to `shader_minifier` via mono (~200ms), so packages with hundreds of shaders are **sampled** — capped at 40 shaders per package (`SM_SAMPLE_LIMIT` in `tests/e2e-worker.js`) to keep a full `e2e.js` run from taking minutes. A `(N/M sampled)` suffix on a row means the percentage is measured on a subset, not the whole package.
+
 ## Why some packages show 0% (or close to it)
 
 A row like `postprocessing` at **0.0%** isn't a bug or a missed shader — every shader in that package is found and run through the minifier, there's just nothing left to remove. Some npm packages only publish their already-built output (a `build/` or `dist/` folder, no `src/`), and that output has usually already been through the shader-embedding tool's own minifier upstream — one statement per line, no comments, no stray indentation. Running our minifier on already-minified source correctly finds nothing to strip. If you want to sanity-check a surprising number, read a raw shader for that package out of `tests/node_modules/<pkg>` — the source itself tells you why.

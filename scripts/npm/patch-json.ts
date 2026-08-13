@@ -6,7 +6,6 @@
 //   scripts/npm/patch-json.ts              # patch bump (0.1.0 -> 0.1.1)
 //   scripts/npm/patch-json.ts patch        # same as above, kept for compatibility
 //   PKG_JSON=other.json scripts/npm/patch-json.ts
-
 import { execFileSync } from 'node:child_process';
 import { readFileSync, writeFileSync } from 'node:fs';
 

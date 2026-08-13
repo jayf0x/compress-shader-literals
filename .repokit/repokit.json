@@ -8,11 +8,5 @@
     ".github/workflows/publish.yml",
     "CLAUDE.md"
   ],
-  "exclude": [
-    "node_modules",
-    "dist",
-    ".git",
-    ".idea",
-    ".DS_Store"
-  ]
+  "exclude": ["node_modules", "dist", ".git", ".idea", ".DS_Store"]
 }

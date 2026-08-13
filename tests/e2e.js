@@ -51,9 +51,9 @@ function cacheFile(pkg, root) {
 // a handful in flight at a time. That's what actually made this benchmark slow:
 // a full Babel parse/traverse over every file a big installed tree ships, not
 // the validate.js load-check above (~1.5s) or anything measured here.
-function scanPackage(pkg, root) {
+function scanPackage(pkg, root, shaderMinify = true) {
   return new Promise((res, rej) => {
-    const worker = new Worker(resolve(here, 'e2e-worker.js'), { workerData: { pkg, root } });
+    const worker = new Worker(resolve(here, 'e2e-worker.js'), { workerData: { pkg, root, shaderMinify } });
     worker.once('message', (result) => {
       worker.terminate();
       res(result);
@@ -70,16 +70,18 @@ async function benchAll(pkgs) {
   mkdirSync(cacheDir, { recursive: true });
   async function drain() {
     let pkg;
+    let pkgIndex = 0;
     while ((pkg = queue.shift()) !== undefined) {
       const root = resolve(here, 'node_modules', pkg);
       const cached = cacheFile(pkg, root);
+      const canShaderMinify = ++pkgIndex < 5;
       let result;
       let hit = false;
       if (existsSync(cached)) {
         result = JSON.parse(readFileSync(cached, 'utf8'));
         hit = true;
       } else {
-        result = await scanPackage(pkg, root);
+        result = await scanPackage(pkg, root, canShaderMinify);
         if (result) writeFileSync(cached, JSON.stringify(result));
       }
       done++;
@@ -112,7 +114,11 @@ for (const { validation: v } of scanned) {
 // Raw bytes-saved (byte-snap) per package, up front — it drives both the sort
 // and the table, so compute it once per row instead of re-measuring later.
 const rows = scanned
-  .map((r) => ({ ...r, raw: diff(snap.text(r.before), snap.text(r.after)).json() }))
+  .map((r) => ({
+    ...r,
+    raw: diff(snap.text(r.before), snap.text(r.after)).json(),
+    sm: r.sm ? { ...r.sm, raw: diff(snap.text(r.sm.before), snap.text(r.sm.after)).json() } : null,
+  }))
   .sort((a, b) => b.raw.savedPercent - a.raw.savedPercent); // best saved% first
 if (rows.length === 0) {
   console.error('No shaders found. Did you `bun add` the packages in tests/?');
@@ -129,20 +135,52 @@ const total = diff(
   { bytes: { total: rows.reduce((s, r) => s + r.raw.afterBytes, 0) }, files: tCount }
 ).json();
 
-const header = '| Package | Shaders | Before | After | Saved | Net after Brotli |';
-const sep = '| ------- | ------: | -----: | ----: | ----: | ---------------: |';
-const line = (name, count, b, a, savedPct, brNet) =>
-  `| ${name} | ${count} | ${b.toLocaleString()} B | ${a.toLocaleString()} B | **${pct(savedPct)}%** | ${brNet} |`;
+const smRows = rows.filter((r) => r.sm);
+const smCell = (r) => {
+  if (!r.sm) return '—';
+  const flag = r.sm.sampled ? ` (${r.sm.count}/${r.count} sampled)` : '';
+  return `**${pct(r.sm.raw.savedPercent)}%**${flag}`;
+};
+
+const header = '| Package | Shaders | Before | After | Saved | Net after Brotli | + shader-minifier |';
+const sep = '| ------- | ------: | -----: | ----: | ----: | ---------------: | -----------------: |';
+const line = (name, count, b, a, savedPct, brNet, sm) =>
+  `| ${name} | ${count} | ${b.toLocaleString()} B | ${a.toLocaleString()} B | **${pct(savedPct)}%** | ${brNet} | ${sm} |`;
 const body = rows.map((r) => {
   const brNet = `${signed(r.brotli.savedPercent)}%`;
-  return line(`\`${r.pkg}\``, r.count, r.raw.beforeBytes, r.raw.afterBytes, r.raw.savedPercent, brNet);
+  return line(`\`${r.pkg}\``, r.count, r.raw.beforeBytes, r.raw.afterBytes, r.raw.savedPercent, brNet, smCell(r));
 });
-const totalLine = line('**Total**', tCount, total.beforeBytes, total.afterBytes, total.savedPercent, '—');
+const smTotal = smRows.length
+  ? diff(
+      { bytes: { total: smRows.reduce((s, r) => s + r.sm.raw.beforeBytes, 0) } },
+      { bytes: { total: smRows.reduce((s, r) => s + r.sm.raw.afterBytes, 0) } }
+    ).json()
+  : null;
+const totalLine = line(
+  '**Total**',
+  tCount,
+  total.beforeBytes,
+  total.afterBytes,
+  total.savedPercent,
+  '—',
+  smTotal ? `**${pct(smTotal.savedPercent)}%**` : '—'
+);
 const table = [header, sep, ...body, totalLine].join('\n');
 
 console.log(`\nReal-world shader compression (engine: minifyShader)\n`);
 console.log(table);
 console.log(`\n→ ${tCount} shaders across ${rows.length} package(s): ${pct(total.savedPercent)}% smaller\n`);
+
+const smShaderCount = smRows.reduce((s, r) => s + r.sm.count, 0);
+const smMs = smRows.reduce((s, r) => s + r.sm.ms, 0);
+if (smShaderCount) {
+  console.log(
+    `+ shader-minifier: ${smShaderCount} shaders sampled in ${(smMs / 1000).toFixed(1)}s ` +
+      `(${(smMs / smShaderCount).toFixed(0)}ms/shader — shells out to shader_minifier via mono)\n`
+  );
+} else {
+  console.log('+ shader-minifier: skipped (shader-minifier-plugin sibling repo not built locally)\n');
+}
 
 // Validation gate: minify must not break a shader that parsed before.
 const v = validation;
