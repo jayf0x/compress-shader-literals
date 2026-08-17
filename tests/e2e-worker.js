@@ -84,6 +84,6 @@ const brotli = count
   ? diff(snap.buffer(brotliCompressSync(before)), snap.buffer(brotliCompressSync(after))).json()
   : null;
 
-const sm = smCount ? { count: smCount, before: smBefore, after: smAfter, ms: smMs, sampled: smCount < count } : null;
+const sm = smCount ? { count: smCount, before: smBefore, after: smAfter, ms: smMs } : null;
 
 parentPort.postMessage(count ? { pkg, count, before, after, validation, brotli, sm } : null);

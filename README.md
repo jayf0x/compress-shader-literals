@@ -84,27 +84,27 @@ Real shaders shipped by popular libraries, run through the built-in minifier:
 
 | Package                       | Shaders |      Before |       After |     Saved | Net after Brotli | + shader-minifier |
 | ----------------------------- | ------: | ----------: | ----------: | --------: | ---------------: | ----------------: |
-| `vtk.js`                      |     142 |   276,617 B |   157,780 B | **43.0%** |           +39.3% |                 — |
-| `three-stdlib`                |     370 |   429,350 B |   266,774 B | **37.9%** |           +35.4% |                 — |
-| `curtainsjs`                  |       7 |     3,406 B |     2,290 B | **32.8%** |            +8.3% |                 — |
-| `hydra-synth`                 |      15 |     3,852 B |     2,591 B | **32.7%** |           +16.3% |                 — |
+| `vtk.js`                      |     142 |   276,617 B |   157,780 B | **43.0%** |           +39.5% |                 — |
+| `three-stdlib`                |     370 |   429,350 B |   266,774 B | **37.9%** |           +35.5% |                 — |
+| `curtainsjs`                  |       7 |     3,406 B |     2,290 B | **32.8%** |           +10.4% |                 — |
+| `hydra-synth`                 |      15 |     3,852 B |     2,591 B | **32.7%** |           +17.9% |                 — |
 | `cesium`                      |     546 |   951,897 B |   649,851 B | **31.7%** |           +32.6% |                 — |
 | `troika-three-utils`          |       4 |       168 B |       120 B | **28.6%** |           +32.3% |                 — |
 | `shader-park-core`            |      18 |    10,794 B |     7,863 B | **27.2%** |           +19.7% |                 — |
-| `pixi.js`                     |     162 |    75,768 B |    55,260 B | **27.1%** |           +16.7% |                 — |
-| `@luma.gl/shadertools`        |      24 |   149,192 B |   109,615 B | **26.5%** |           +29.8% |                 — |
+| `pixi.js`                     |     162 |    75,768 B |    55,260 B | **27.1%** |           +16.3% |                 — |
+| `@luma.gl/shadertools`        |      24 |   149,192 B |   109,615 B | **26.5%** |           +29.9% |                 — |
 | `three`                       |     281 |   240,906 B |   181,942 B | **24.5%** |           +25.5% |                 — |
-| `ogl`                         |      22 |     6,109 B |     4,821 B | **21.1%** |            +9.7% |                 — |
+| `ogl`                         |      22 |     6,109 B |     4,821 B | **21.1%** |            +9.1% |                 — |
 | `playcanvas`                  |     856 | 1,297,844 B | 1,025,421 B | **21.0%** |           +49.1% |                 — |
 | `deck.gl`                     |     132 |   242,113 B |   195,406 B | **19.3%** |           +31.1% |                 — |
 | `@paper-design/shaders`       |      30 |   142,466 B |   118,204 B | **17.0%** |            +8.9% |                 — |
-| `@deck.gl/layers`             |     104 |   223,902 B |   192,483 B | **14.0%** |           +34.6% |                 — |
-| `@deck.gl/core`               |      40 |    17,746 B |    15,494 B | **12.7%** |            +9.5% |                 — |
-| `@deck.gl/aggregation-layers` |      56 |    43,713 B |    38,382 B | **12.2%** |           +26.2% |                 — |
-| `@luma.gl/engine`             |      29 |    11,357 B |    10,206 B | **10.1%** |            +4.4% |                 — |
-| `@babylonjs/core`             |     349 |   669,740 B |   660,843 B |  **1.3%** |            +2.1% |                 — |
+| `@deck.gl/layers`             |     104 |   223,902 B |   192,483 B | **14.0%** |           +32.4% |         **29.2%** |
+| `@deck.gl/core`               |      40 |    17,746 B |    15,494 B | **12.7%** |            +9.1% |         **20.7%** |
+| `@deck.gl/aggregation-layers` |      56 |    43,713 B |    38,382 B | **12.2%** |           +25.3% |         **22.9%** |
+| `@luma.gl/engine`             |      29 |    11,357 B |    10,206 B | **10.1%** |            +3.1% |         **15.6%** |
+| `@babylonjs/core`             |     349 |   669,740 B |   660,843 B |  **1.3%** |            +2.1% |         **10.5%** |
 | `postprocessing`              |     136 |   179,705 B |   179,705 B |  **0.0%** |            +0.0% |                 — |
-| **Total**                     |    3323 | 4,976,645 B | 3,875,051 B | **22.1%** |                — |                 — |
+| **Total**                     |    3323 | 4,976,645 B | 3,875,051 B | **22.1%** |                — |         **15.7%** |
 
 _2477/3323 parseable shaders. ✅ Verified 2026-08-13. [How this is measured](docs/stats.md)_
 <!-- STATS:END -->
@@ -127,7 +127,7 @@ export default {
 };
 ```
 
-Worth it when a shader has nothing left to strip. `postprocessing` ships pre-minified — no comments, no stray whitespace — so this package's own engine finds **0.0%** to save (see the Stats table above). shader_minifier still finds **21.0%**, by renaming identifiers and eliminating dead code instead of just text.
+Worth it when a shader has nothing left to strip. `@babylonjs/core`'s shaders are already comment-free and tightly formatted, so this package's own engine finds only **1.3%** to save (see the Stats table above). shader_minifier still finds **10.5%**, by renaming identifiers and eliminating dead code instead of just text.
 
 ## How it works
 

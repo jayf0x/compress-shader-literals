@@ -40,10 +40,10 @@ const logicHash = createHash('sha1')
   .digest('hex')
   .slice(0, 12);
 
-function cacheFile(pkg, root) {
+function cacheFile(pkg, root, shaderMinify) {
   const { version } = JSON.parse(readFileSync(resolve(root, 'package.json'), 'utf8'));
   const safe = pkg.replace(/\//g, '__');
-  return resolve(cacheDir, `${safe}@${version}--${logicHash}.json`);
+  return resolve(cacheDir, `${safe}@${version}--${logicHash}--sm${shaderMinify ? 1 : 0}.json`);
 }
 
 // Each package's scan (walk its files, extract shaders, minify, validate) is
@@ -66,15 +66,18 @@ async function benchAll(pkgs) {
   const queue = pkgs.filter((pkg) => existsSync(resolve(here, 'node_modules', pkg)));
   const total = queue.length;
   let done = 0;
+  // Shared across all parallel drain() calls — must be, so "top 5" means the
+  // first 5 packages popped off the (single, shared) queue, not the first 5
+  // seen by each of the ~cpus().length concurrent drain loops.
+  let pkgIndex = 0;
   const results = [];
   mkdirSync(cacheDir, { recursive: true });
   async function drain() {
     let pkg;
-    let pkgIndex = 0;
     while ((pkg = queue.shift()) !== undefined) {
+      const canShaderMinify = pkgIndex++ < 5;
       const root = resolve(here, 'node_modules', pkg);
-      const cached = cacheFile(pkg, root);
-      const canShaderMinify = ++pkgIndex < 5;
+      const cached = cacheFile(pkg, root, canShaderMinify);
       let result;
       let hit = false;
       if (existsSync(cached)) {
@@ -136,11 +139,7 @@ const total = diff(
 ).json();
 
 const smRows = rows.filter((r) => r.sm);
-const smCell = (r) => {
-  if (!r.sm) return '—';
-  const flag = r.sm.sampled ? ` (${r.sm.count}/${r.count} sampled)` : '';
-  return `**${pct(r.sm.raw.savedPercent)}%**${flag}`;
-};
+const smCell = (r) => (r.sm ? `**${pct(r.sm.raw.savedPercent)}%**` : '—');
 
 const header = '| Package | Shaders | Before | After | Saved | Net after Brotli | + shader-minifier |';
 const sep = '| ------- | ------: | -----: | ----: | ----: | ---------------: | -----------------: |';
@@ -175,7 +174,7 @@ const smShaderCount = smRows.reduce((s, r) => s + r.sm.count, 0);
 const smMs = smRows.reduce((s, r) => s + r.sm.ms, 0);
 if (smShaderCount) {
   console.log(
-    `+ shader-minifier: ${smShaderCount} shaders sampled in ${(smMs / 1000).toFixed(1)}s ` +
+    `+ shader-minifier: ${smShaderCount} shaders (first ${smRows.length} packages) in ${(smMs / 1000).toFixed(1)}s ` +
       `(${(smMs / smShaderCount).toFixed(0)}ms/shader — shells out to shader_minifier via mono)\n`
   );
 } else {
